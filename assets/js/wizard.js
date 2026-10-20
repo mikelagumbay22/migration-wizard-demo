@@ -113,7 +113,7 @@ var EXT='<span class="sr-only"> (official site, opens in a new tab)</span>';
 function xl(label,url){return '<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+EXT+'</a>';}
 var HINT={free:'Your passport is on the official list of travellers who don’t need a visa for short visits here.',visa:'Your passport isn’t on the official list we checked, so you may need a visitor visa.'};
 function regLinks(c){var r=D.reg[c];return r.links.map(function(l){return '<a href="'+esc(l[1])+'" target="_blank" rel="noopener noreferrer">'+esc(l[0])+'<span class="sr-only"> (official site, opens in a new tab)</span></a>';});}
-function renderResults(){var A=answers();if(A.goal==='tour'){renderTour(A);return;}var R=EN.score(D,A),list=R.list;
+function renderResults(){var A=answers();st.eng=A;st.ts=Date.now();save();if(window.WASync)window.WASync(st);if(A.goal==='tour'){renderTour(A);return;}var R=EN.score(D,A),list=R.list;
  $('declNote').innerHTML=EN.declarationNote(A)?'<div class="notice decl" role="note"><p><strong>Worth raising with a professional.</strong> '+esc(D.text.declNote)+'</p></div>':'';
  var ul=$('resList');
  var bn=budgetNote(R,A);$('declNote').innerHTML+=bn;
@@ -125,10 +125,9 @@ function renderResults(){var A=answers();if(A.goal==='tour'){renderTour(A);retur
    +(p.next_steps?'<p class="rp-next"><span>Next step:</span> '+esc(p.next_steps)+'</p>':'')
    +(p.cost?'<p class="rp-cost small muted">Official figure: '+esc(p.cost.cur)+' '+p.cost.amount.toLocaleString('en')+' '+esc(p.cost.what)+'.</p>':'<p class="rp-cost small muted">Costs vary, so check the official site.</p>')
    +(p.paused?'<p class="rp-paused"><strong>Currently paused</strong></p>':'')+'<p class="rp-src"><a href="'+esc(p.source)+'" target="_blank" rel="noopener noreferrer">Official page<span class="sr-only"> for '+esc(p.name)+' (opens in a new tab)</span></a> · checked '+esc(p.checked)+(p.verify?' · <span class="unconf">not fully confirmed on that date, so check the official page'+(p.verify_note?' ('+esc(p.verify_note)+')':'')+'</span>':'')+'</p></li>';}).join('');
-  var links=regLinks(c),reg=D.reg[c];
   return '<li class="rcard" data-reveal style="--d:'+(i*0.07)+'s"><div class="rc-head"><span class="rc-n" aria-hidden="true">'+(i+1)+'</span><div><h2>'+esc(N(c))+'</h2><span class="pill big '+r.band+'">'+BL[r.band]+'</span></div></div>'
    +'<p class="rc-text">'+esc(D.meta.result_text[r.band])+'</p><h3 class="rc-sub">Pathways that may be relevant</h3><ul class="rps">'+pws+'</ul>'
-   +'<div class="rc-reg"><h3>How to find a licensed consultant</h3><p>'+esc(D.text.referral.replace('{country}',N(c)).split('{links}')[0])+links.join(', ')+'.</p><p class="small muted">'+esc(reg.body)+(reg.extra?' '+esc(reg.extra):'')+'</p></div></li>';}).join('');
+   +'<div class="rc-reg cta-pro"><p>'+esc(D.text.cta.replace('{country}',N(c)))+'</p><p class="cta-acts"><a class="btn btn-primary" href="signup.html?country='+encodeURIComponent(c)+'">Register</a><a class="btn btn-ghost" href="login.html">Log in</a></p></div></li>';}).join('');
  fillCountries(list);
  if(window.PFReveal)window.PFReveal(ul);}
 function budgetNote(R,A){var r=R.removed;if(!r.length)return '';
