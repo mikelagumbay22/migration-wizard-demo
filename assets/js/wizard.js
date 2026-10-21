@@ -3,7 +3,7 @@
 "use strict";
 var D=window.PF_DATA,EN=window.PFEngine;if(!D||!EN)return;
 var KEY='pf_wizard_v1',$=function(id){return document.getElementById(id);};
-var form=$('wiz'),steps=[].slice.call(document.querySelectorAll('.step')),intro=$('intro'),res=$('results');
+var form=$('wiz'),steps=[].slice.call(document.querySelectorAll('.step')),intro=$('intro'),res=$('results'),summ=$('summary');
 var RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 var st=load()||{step:0,a:{},seen:0,view:'intro'};
 /* 20261020e: drop invalid stored exact numbers */
@@ -72,14 +72,27 @@ var dots=$('dots');
 function renderDots(){dots.innerHTML=steps.map(function(s,i){var t=s.querySelector('.step-kicker').textContent.split('· ')[1];var cur=i===st.step;
  return '<li><button type="button" data-go="'+i+'" class="'+(cur?'cur':i<=st.seen?'done':'')+'"'+(i>st.seen?' disabled':'')+(cur?' aria-current="step"':'')+'><span class="dot-n">'+(i+1)+'</span><span class="dot-t">'+esc(t)+'</span></button></li>';}).join('');
  dots.querySelectorAll('[data-go]').forEach(function(b){b.addEventListener('click',function(){var to=+b.dataset.go;if(to>st.step&&!validate(st.step))return;go(to);});});}
-function show(view){intro.hidden=view!=='intro';form.hidden=view!=='wiz';res.hidden=view!=='results';st.view=view;save();window.scrollTo(0,0);}
+function show(view){intro.hidden=view!=='intro';form.hidden=view!=='wiz';res.hidden=view!=='results';summ.hidden=view!=='summary';st.view=view;save();window.scrollTo(0,0);}
 function go(i,noFocus){st.step=i;st.seen=Math.max(st.seen,i);save();steps.forEach(function(s,k){s.hidden=k!==i;});
  if(!RM){steps[i].classList.remove('enter');void steps[i].offsetWidth;steps[i].classList.add('enter');}
  $('progBar').style.width=((i+1)/steps.length*100)+'%';$('progText').textContent='Step '+(i+1)+' of '+steps.length;
- $('backBtn').disabled=false;$('nextBtn').firstChild.textContent=i===steps.length-1?'See my results ':'Next ';renderDots();applyConditions();
+ $('backBtn').disabled=false;$('nextBtn').firstChild.textContent=i===steps.length-1?'See summary ':'Next ';renderDots();applyConditions();
  if(!noFocus)steps[i].querySelector('.step-title').focus({preventScroll:true});window.scrollTo(0,0);}
 form.addEventListener('submit',function(e){e.preventDefault();if(document.activeElement===ppIn&&addPP())return;if(!validate(st.step))return;
- if(st.step<steps.length-1)go(st.step+1);else{st.done=true;renderResults();show('results');$('resTitle').focus({preventScroll:true});}});
+ if(st.step<steps.length-1)go(st.step+1);else{renderSummary();show('summary');$('sumTitle').focus({preventScroll:true});}});
+/* ---------- summary (every applicable question, grouped by step) ---------- */
+function qLabel(q){var l=q.querySelector('legend')||q.querySelector('label');return l?l.textContent.trim():q.getAttribute('data-q');}
+function qAnswer(q){var n=q.getAttribute('data-q');if(n==='passport'){return pp().length?pp().join(', '):'';}
+ var sel=q.querySelector('select');if(sel){return sel.value?sel.options[sel.selectedIndex].text:'';}
+ var num=q.querySelector('input[type=number]');if(num){return st.a[n]!=null?'USD '+Number(st.a[n]).toLocaleString('en'):'';}
+ return [].filter.call(q.querySelectorAll('input:checked'),function(x){return true;}).map(function(x){return x.closest('label').textContent.trim();}).join(', ');}
+function renderSummary(){$('sumList').innerHTML=steps.map(function(s,i){var t=s.querySelector('.step-title').textContent,k=s.querySelector('.step-kicker').textContent;
+  var rows=[].filter.call(s.querySelectorAll('.q'),function(q){return !q.hidden&&!q.closest('[hidden]:not(.step)');}).map(function(q){var a=qAnswer(q);
+   return '<div class="sum-row"><dt>'+esc(qLabel(q))+'</dt><dd'+(a?'':' class="sum-none"')+'>'+esc(a||'Not answered')+'</dd></div>';}).join('');
+  return '<section class="sum-step" aria-labelledby="sum-h'+i+'"><div class="sum-head"><div><p class="step-kicker">'+esc(k)+'</p><h2 id="sum-h'+i+'">'+esc(t)+'</h2></div><button class="btn-link sum-edit" type="button" data-edit="'+i+'">Edit<span class="sr-only"> '+esc(t)+'</span></button></div><dl class="sum-dl">'+rows+'</dl></section>';}).join('');
+ $('sumList').querySelectorAll('[data-edit]').forEach(function(b){b.addEventListener('click',function(){show('wiz');go(+b.dataset.edit);});});}
+$('sumBack').addEventListener('click',function(){show('wiz');go(steps.length-1);});
+$('sumGo').addEventListener('click',function(){st.done=true;renderResults();show('results');$('resTitle').focus({preventScroll:true});});
 $('backBtn').addEventListener('click',function(){if(st.step===0){show('intro');$('introTitle').focus();}else go(st.step-1);});
 $('startBtn').addEventListener('click',function(){show('wiz');go(st.step||0);});
 $('resumeBtn').addEventListener('click',function(){if(st.done){renderResults();show('results');}else{show('wiz');go(st.step);}});
@@ -151,6 +164,7 @@ restore();Object.keys(NUMQ).forEach(function(n){if(st.a[n]!=null)numUpdate($('f-
 if(new URLSearchParams(location.search).has('start')){show('wiz');go(st.step||0,true);}
 else if(st.view==='results'&&st.done){renderResults();show('results');}
 else if(st.view==='wiz'){show('wiz');go(st.step,true);}
+else if(st.view==='summary'){renderSummary();show('summary');}
 else{show('intro');}
 $('resumeRow').hidden=!(Object.keys(st.a).length&&st.view==='intro');
 })();
