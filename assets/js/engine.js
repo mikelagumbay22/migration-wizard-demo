@@ -117,7 +117,18 @@ function scoreAll(D,A,perType,hideLow){var groups=[],seen={},removed=[],best={};
   groups.sort(function(a,b){if(!a.list.length||!b.list.length)return (!a.list.length-!b.list.length)||TYPES.indexOf(a.type)-TYPES.indexOf(b.type);return rank(a.list[0],b.list[0])||TYPES.indexOf(a.type)-TYPES.indexOf(b.type);});
   var merged=Object.keys(best).map(function(k){return best[k];}).sort(function(a,b){return rank(a,b)||a.country.localeCompare(b.country);});
   return {groups:groups,merged:merged,removed:removed};}
+/* 20261020o: results grouped by country. Same per-type scoring as scoreAll; keeps each pathway's best result
+   (a pathway listed under several types keeps all its type labels), drops Low-fit pathways, and drops countries left with none. */
+function byCountry(D,A){var C={},seen={},removed=[];
+  TYPES.forEach(function(g){var r=score(D,Object.assign({},A,{goal:g}));r.removed.forEach(function(x){if(!seen[x.id]){seen[x.id]=1;removed.push(x);}});
+    r.list.forEach(function(c){c.pathways.forEach(function(p){if(p.band==='low')return;var m=C[c.country]=C[c.country]||{},o=m[p.id];
+      if(!o){m[p.id]=Object.assign({types:[g]},p);return;}if(o.types.indexOf(g)<0)o.types.push(g);
+      if((BR[p.band]-BR[o.band])>0||(BR[p.band]===BR[o.band]&&p.pct>o.pct))m[p.id]=Object.assign({types:o.types},p);});});});
+  var list=Object.keys(C).map(function(k){var ps=Object.keys(C[k]).map(function(i){return C[k][i];}).sort(function(a,b){return (b.passes-a.passes)||(BR[b.band]-BR[a.band])||(b.pct-a.pct);});
+    return {country:k,pathways:ps,band:ps.reduce(function(b,p){return BR[p.band]>BR[b]?p.band:b;},ps[0].band),passes:ps.some(function(p){return p.passes;}),score:Math.max.apply(null,ps.map(function(p){return p.pct;}))};});
+  list.sort(function(a,b){return rank(a,b)||a.country.localeCompare(b.country);});
+  return {list:list,removed:removed};}
 function declarationNote(A){return ['criminal','health','refusal'].some(function(k){return A.decl&&A.decl[k]==='yes';});}
-var api={TYPES:TYPES,scoreAll:scoreAll,bandOf:bandOf,own:own,score:score,tour:tour,test:test,evalPathway:evalPathway,lifestyle:lifestyle,goalMax:goalMax,pathwayMax:pathwayMax,declarationNote:declarationNote};
+var api={TYPES:TYPES,byCountry:byCountry,scoreAll:scoreAll,bandOf:bandOf,own:own,score:score,tour:tour,test:test,evalPathway:evalPathway,lifestyle:lifestyle,goalMax:goalMax,pathwayMax:pathwayMax,declarationNote:declarationNote};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PFEngine=api;
 })(this);

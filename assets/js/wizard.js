@@ -127,25 +127,23 @@ function xl(label,url){return '<a href="'+esc(url)+'" target="_blank" rel="noope
 var HINT={free:'Your passport is on the official list of travellers who don’t need a visa for short visits here.',visa:'Your passport isn’t on the official list we checked, so you may need a visitor visa.'};
 function regLinks(c){var r=D.reg[c];return r.links.map(function(l){return '<a href="'+esc(l[1])+'" target="_blank" rel="noopener noreferrer">'+esc(l[0])+'<span class="sr-only"> (official site, opens in a new tab)</span></a>';});}
 var TL={work:'Work',study:'Study',family:'Family',invest:'Investment and business',retire:'Retirement',remote:'Remote work (digital nomad)'};
-function pwHtml(p){return '<li class="rp"><div class="rp-top"><h5 class="rp-h">'+esc(p.name)+'</h5><span class="pill '+p.band+'">'+BL[p.band]+'</span></div>'
+function pwHtml(p){return '<li class="rp"><div class="rp-top"><h4 class="rp-h">'+esc(p.name)+(p.types?' <span class="rp-type">'+p.types.map(function(t){return esc(TL[t]);}).join(' · ')+'</span>':'')+'</h4><span class="pill '+p.band+'">'+BL[p.band]+'</span></div>'
    +(p.passes?'':'<p class="rp-miss"><span>What your answers didn’t show:</span> '+p.failed.map(function(f){return esc(phrase(f));}).join('; ')+'.</p>')
    +(p.note?'<p class="rp-note">'+esc(p.note)+'</p>':'')
    +(p.next_steps?'<p class="rp-next"><span>Next step:</span> '+esc(p.next_steps)+'</p>':'')
    +(p.cost?'<p class="rp-cost small muted">Official figure: '+esc(p.cost.cur)+' '+p.cost.amount.toLocaleString('en')+' '+esc(p.cost.what)+'.</p>':'<p class="rp-cost small muted">Costs vary, so check the official site.</p>')
    +(p.paused?'<p class="rp-paused"><strong>Currently paused</strong></p>':'')+'<p class="rp-src"><a href="'+esc(p.source)+'" target="_blank" rel="noopener noreferrer">Official page<span class="sr-only"> for '+esc(p.name)+' (opens in a new tab)</span></a> · checked '+esc(p.checked)+(p.verify?' · <span class="unconf">not fully confirmed on that date, so check the official page'+(p.verify_note?' ('+esc(p.verify_note)+')':'')+'</span>':'')+'</p></li>';}
-function cardHtml(r,i,g){var c=r.country;
-  return '<li class="rcard" data-reveal style="--d:'+(i*0.07)+'s"><div class="rc-head"><span class="rc-n" aria-hidden="true">'+(i+1)+'</span><div><h3 class="rc-h">'+esc(N(c))+'</h3><span class="pill big '+r.band+'">'+BL[r.band]+'</span></div></div>'
-   +'<p class="rc-text">'+esc(D.meta.result_text[r.band])+'</p><h4 class="rc-sub">Pathways that may be relevant</h4><ul class="rps">'+r.pathways.map(pwHtml).join('')+'</ul>'
+function cardHtml(r,i){var c=r.country;
+  return '<li class="rcard" id="c-'+esc(c)+'" data-reveal style="--d:'+(i*0.07)+'s"><div class="rc-head"><span class="rc-n" aria-hidden="true">'+(i+1)+'</span><div><h2 class="rc-h">'+esc(N(c))+'</h2><span class="pill big '+r.band+'">'+BL[r.band]+'</span></div></div>'
+   +'<p class="rc-text">'+esc(D.meta.result_text[r.band])+'</p><h3 class="rc-sub">Pathways that may be relevant</h3><ul class="rps">'+r.pathways.map(pwHtml).join('')+'</ul>'
    +'<div class="rc-reg cta-pro"><p>'+esc(D.text.cta.replace('{country}',N(c)))+'</p><p class="cta-acts"><a class="btn btn-primary" href="signup.html?country='+encodeURIComponent(c)+'">Register<span class="sr-only"> for '+esc(N(c))+'</span></a><a class="btn btn-ghost" href="login.html">Log in</a></p></div></li>';}
-function renderResults(){var A=answers();st.eng=A;st.ts=Date.now();save();if(window.WASync)window.WASync(st);var R=EN.scoreAll(D,A,3,true),full=R.groups.filter(function(g){return g.list.length;}),empty=R.groups.filter(function(g){return !g.list.length;});
+function renderResults(){var A=answers();st.eng=A;st.ts=Date.now();save();if(window.WASync)window.WASync(st);var R=EN.byCountry(D,A),list=R.list;
  $('declNote').innerHTML=EN.declarationNote(A)?'<div class="notice decl" role="note"><p><strong>Worth raising with a professional.</strong> '+esc(D.text.declNote)+'</p></div>':'';
  var ul=$('resList');$('declNote').innerHTML+=budgetNote(R,A);
- var toc=full.length?'<li class="res-toc"><nav aria-label="Pathway types"><p class="rc-sub">Jump to a pathway type</p><ul>'+full.map(function(g){return '<li><a href="#grp-'+g.type+'">'+esc(TL[g.type])+'</a></li>';}).join('')+'<li><a href="#grp-visit">Visiting or touring</a></li></ul></nav></li>':'';
- var groups=full.map(function(g){return '<li class="rgroup" id="grp-'+g.type+'" aria-labelledby="gh-'+g.type+'"><h2 class="rg-h" id="gh-'+g.type+'">'+esc(TL[g.type])+' pathways</h2><ol class="res-list">'+g.list.map(function(r,i){return cardHtml(r,i,g.type);}).join('')+'</ol></li>';}).join('');
- groups+=empty.map(function(g){return '<li class="rgroup rg-empty" id="grp-'+g.type+'" aria-labelledby="gh-'+g.type+'"><h2 class="rg-h" id="gh-'+g.type+'">'+esc(TL[g.type])+' pathways</h2><p class="rg-none">No strong matches for this pathway based on your answers.</p></li>';}).join('');
- if(!full.length)groups='<li class="res-empty"><h2>No pathways to show for these answers</h2><p>'+(R.removed.length?'Your exclusions and stated budget removed every country with a pathway.':'None of the pathways came out above low fit for these answers.')+' You can still browse the <a href="countries.html">countries, official sources and registries</a>, or edit your answers.</p></li>'+groups;
- ul.innerHTML=toc+groups+tourGroup(A);
- fillCountries(R.merged);
+ var toc=list.length?'<li class="res-toc"><nav aria-label="Countries"><p class="rc-sub">Jump to a country</p><ul>'+list.map(function(r){return '<li><a href="#c-'+esc(r.country)+'">'+esc(N(r.country))+'</a></li>';}).join('')+'<li><a href="#grp-visit">Visiting or touring</a></li></ul></nav></li>':'';
+ var body=list.length?list.map(function(r,i){return cardHtml(r,i);}).join(''):'<li class="res-empty"><h2>No pathways to show for these answers</h2><p>'+(R.removed.length?'Your exclusions and stated budget removed every country with a pathway.':'None of the pathways came out above low fit for these answers.')+' You can still browse the <a href="countries.html">countries, official sources and registries</a>, or edit your answers.</p></li>';
+ ul.innerHTML=toc+body+tourGroup(A);
+ fillCountries(list);
  if(window.PFReveal)window.PFReveal(ul);}
 function budgetNote(R,A){var r=R.removed;if(!r.length)return '';
  return '<div class="notice budget" role="note"><p><strong>Filtered by your budget.</strong> We left out '+r.map(function(x){return esc(x.name)+' ('+esc(N(x.country))+')';}).join(', ')+', because the official figure (for example '+esc(r[0].cost.cur)+' '+r[0].cost.amount.toLocaleString('en')+' '+esc(r[0].cost.what)+') is clearly above the top of the budget band you chose. We only filter where an official figure is published; elsewhere costs vary, so check the official site. Currency conversion uses '+xl('ECB reference rates',D.extra.fxSource)+' of '+esc(D.extra.checked)+', reduced by 10%.</p></div>';}

@@ -1,5 +1,5 @@
-@font-face{font-family:"Fraunces";src:url("../fonts/fraunces-var-latin.woff2?v=20261020n") format("woff2");font-weight:300 700;font-display:optional}
-@font-face{font-family:"Jakarta";src:url("../fonts/jakarta-var-latin.woff2?v=20261020n") format("woff2");font-weight:300 800;font-display:optional}
+@font-face{font-family:"Fraunces";src:url("../fonts/fraunces-var-latin.woff2?v=20261020o") format("woff2");font-weight:300 700;font-display:optional}
+@font-face{font-family:"Jakarta";src:url("../fonts/jakarta-var-latin.woff2?v=20261020o") format("woff2");font-weight:300 800;font-display:optional}
 :root{--paper:#f6f1e7;--paper2:#efe7d8;--card:#fffdf8;--ink:#1d1a16;--ink2:#4a4339;--muted:#7a7064;--line:#e2d8c6;--clay:#b4532a;--clay-ink:#93401c;--sun:#e7a36a;--sage:#5f7a5a;--sage-bg:#e5ecdf;--gold-bg:#f6e6cf;--sand-bg:#ece4d6;
  --r:22px;--ease:cubic-bezier(.2,.7,.2,1);--serif:Fraunces,"Iowan Old Style",Georgia,serif;--sans:Jakarta,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
 *,*::before,*::after{box-sizing:border-box}
@@ -200,7 +200,7 @@ p{margin:0 0 1em}
 @media(max-width:640px){.nav a.nav-login{display:inline-flex;font-size:.84rem;padding:9px 10px}}
 @media(max-width:640px){.nav a{white-space:nowrap}.nav a.nav-cta{font-size:.8rem;padding:8px 11px}.nav a.nav-login{padding:8px 6px;font-size:.84rem}}
 @media(max-width:400px){.brand-name{font-size:1.02rem}.brand{gap:7px}.brand-mark{width:26px;height:26px}.head-in{gap:6px}}
-/* 20261020n: answers summary before results */
+/* 20261020o: answers summary before results */
 .summary{padding:clamp(40px,6vw,80px) 0 80px}.summary h1{font-size:clamp(2rem,4.8vw,3rem)}
 .sum-step{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:clamp(18px,3vw,26px);margin:0 0 16px}
 .sum-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}.sum-head h2{font-size:1.3rem;margin:0}.sum-head .step-kicker{margin:0 0 4px}
@@ -208,7 +208,7 @@ p{margin:0 0 1em}
 .sum-dl{margin:0;display:grid}.sum-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 18px;padding:10px 0;border-top:1px solid var(--line)}
 .sum-row dt{color:var(--ink2);font-size:.94rem}.sum-row dd{margin:0;font-weight:600;overflow-wrap:anywhere}.sum-none{color:var(--muted);font-weight:400!important;font-style:italic}
 @media(max-width:640px){.sum-row{grid-template-columns:1fr}}
-/* 20261020n: results grouped by pathway type */
+/* 20261020o: results grouped by pathway type */
 .res-list .res-list{gap:18px}
 .rgroup{list-style:none;scroll-margin-top:90px}.rg-h{margin:18px 0 14px;font-size:clamp(1.5rem,3vw,2.1rem)}
 .rc-head .rc-h{font-size:clamp(1.5rem,3vw,2.1rem);margin:0 0 6px}.rp-h{font-size:1.08rem;margin:0}
@@ -216,6 +216,8 @@ p{margin:0 0 1em}
 .res-toc ul{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}.res-toc a{display:inline-flex;min-height:40px;align-items:center;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--paper);text-decoration:none;color:var(--ink);font-weight:600;font-size:.9rem}
 .tour-more>summary{cursor:pointer;font-weight:600;color:var(--clay-ink);min-height:44px;display:flex;align-items:center}
 .tour-more>p{color:var(--ink2)}
-/* 20261020n: empty pathway sections, compact */
+/* 20261020o: empty pathway sections, compact */
 .rg-empty{padding:12px 18px;border:1px dashed var(--line);border-radius:var(--r)}.rg-empty .rg-h{font-size:1.15rem;margin:0 0 2px}.rg-none{margin:0;color:var(--ink2);font-size:.95rem}
 .rg-empty+.rg-empty{margin-top:-10px}
+/* 20261020o: results by country */
+.rcard{scroll-margin-top:90px}.rp-type{display:inline-block;margin-left:6px;font:600 .72rem var(--sans);letter-spacing:.04em;color:var(--muted);vertical-align:middle}
