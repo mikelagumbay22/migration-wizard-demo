@@ -1,5 +1,5 @@
-@font-face{font-family:"Fraunces";src:url("../fonts/fraunces-var-latin.woff2?v=20261020j") format("woff2");font-weight:300 700;font-display:optional}
-@font-face{font-family:"Jakarta";src:url("../fonts/jakarta-var-latin.woff2?v=20261020j") format("woff2");font-weight:300 800;font-display:optional}
+@font-face{font-family:"Fraunces";src:url("../fonts/fraunces-var-latin.woff2?v=20261020k") format("woff2");font-weight:300 700;font-display:optional}
+@font-face{font-family:"Jakarta";src:url("../fonts/jakarta-var-latin.woff2?v=20261020k") format("woff2");font-weight:300 800;font-display:optional}
 :root{--paper:#f6f1e7;--paper2:#efe7d8;--card:#fffdf8;--ink:#1d1a16;--ink2:#4a4339;--muted:#7a7064;--line:#e2d8c6;--clay:#b4532a;--clay-ink:#93401c;--sun:#e7a36a;--sage:#5f7a5a;--sage-bg:#e5ecdf;--gold-bg:#f6e6cf;--sand-bg:#ece4d6;
  --r:22px;--ease:cubic-bezier(.2,.7,.2,1);--serif:Fraunces,"Iowan Old Style",Georgia,serif;--sans:Jakarta,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
 *,*::before,*::after{box-sizing:border-box}

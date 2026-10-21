@@ -1,4 +1,4 @@
-/* Wayfarer Atlas portal theme on top of the shared shadcn-style CSS (shad.css, dashboard.css, chat.css from the ISConnect portal). */
+/* AtlasMigrate portal theme on top of the shared shadcn-style CSS (shad.css, dashboard.css, chat.css from the ISConnect portal). */
 body.shad{--primary:30 13% 10%;--accent:18 62% 44%;--ring:18 62% 44%;background:#f7f4ee}
 :root{--navy:#1d1a16;--navy2:#1d1a16;--gold:#b4532a;--gold2:#e7a36a}
 .side{background:#1d1a16;color:#e9e1d3}.side nav a[aria-current="page"]{background:rgba(231,163,106,.2)}
