@@ -10,7 +10,7 @@ var st=load()||{step:0,a:{},seen:0,view:'intro'};
 (function(){['income_exact','funds_exact'].forEach(function(k){var v=st.a&&st.a[k];if(v!=null&&!(typeof v==='number'&&isFinite(v)&&v>=0&&v<=D.extra.numMax[k]&&Math.floor(v)===v)){delete st.a[k];}});})();
 /* 20261020d: answers saved with old income/savings bands are kept only if they fit inside a new band; otherwise that one answer is cleared and the questionnaire reopens at the Money step. */
 (function(){var M=D.extra.migrate,ch=false;Object.keys(M).forEach(function(q){var v=st.a&&st.a[q];if(v!=null&&Object.prototype.hasOwnProperty.call(M[q],v)){ch=true;if(M[q][v])st.a[q]=M[q][v];else{delete st.a[q];st.cleared=true;}}});
- if(ch){if(st.cleared){st.done=false;st.view='wiz';st.step=3;delete st.cleared;}try{sessionStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}})();
+ if(ch){if(st.cleared){st.done=false;st.view='wiz';st.step=Math.max(0,steps.indexOf($('step-money')));delete st.cleared;}try{sessionStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}})();
 function load(){try{return JSON.parse(sessionStorage.getItem(KEY));}catch(e){return null;}}
 function save(){try{sessionStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
 function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -52,9 +52,9 @@ form.addEventListener('change',function(e){var n=e.target.name;if(!n||e.target.i
 function capPriorities(){var b=form.querySelectorAll('[name="priorities"]'),n=[].filter.call(b,function(x){return x.checked;}).length;b.forEach(function(x){x.disabled=!x.checked&&n>=3;x.closest('.opt').classList.toggle('is-disabled',x.disabled);});}
 /* ---------- conditional questions ---------- */
 function A(k){return st.a[k];}
-function conds(){var g=A('goal'),lp=A('langpick')||[],jo=A('jo')==='yes',ft=A('ft')&&A('ft')!=='none',ties=jo||ft;
- return {'if-work':g==='work','if-lang-french':lp.indexOf('french')>-1,'if-lang-german':lp.indexOf('german')>-1,'if-lang-japanese':lp.indexOf('japanese')>-1,
-  'if-invest':g==='invest','if-income':g==='retire'||g==='remote','if-jo':jo,'if-ft':ft,'if-ties':ties,'if-pr':ties&&(A('pr')==='study'||A('pr')==='work'),'if-masters':A('education')==='master'||A('education')==='phd','if-noincx':A('income_exact')==null,'if-nofundx':A('funds_exact')==null};}
+function conds(){var lp=A('langpick')||[],jo=A('jo')==='yes',ft=A('ft')&&A('ft')!=='none',ties=jo||ft;
+ return {'if-work':!!A('experience')&&A('experience')!=='0','if-lang-french':lp.indexOf('french')>-1,'if-lang-german':lp.indexOf('german')>-1,'if-lang-japanese':lp.indexOf('japanese')>-1,
+  'if-invest':true,'if-income':true,'if-jo':jo,'if-ft':ft,'if-ties':ties,'if-pr':ties&&(A('pr')==='study'||A('pr')==='work'),'if-masters':A('education')==='master'||A('education')==='phd','if-noincx':A('income_exact')==null,'if-nofundx':A('funds_exact')==null};}
 function applyConditions(){var c=conds();Object.keys(c).forEach(function(cls){form.querySelectorAll('.'+cls).forEach(function(el){
  var show=c[cls];if(el.hidden===!show)return;el.hidden=!show;if(show&&!RM){el.classList.remove('appear');void el.offsetWidth;el.classList.add('appear');}});});}
 function visible(el){return !el.hidden&&!el.closest('[hidden]');}
@@ -100,7 +100,7 @@ $('editBtn').addEventListener('click',function(){show('wiz');go(0);});
 $('restartBtn').addEventListener('click',function(){st={step:0,a:{},seen:0,view:'wiz'};save();form.reset();restore();capPriorities();show('wiz');go(0);});
 /* ---------- answers for the engine (hidden questions are ignored) ---------- */
 function answers(){var c=conds(),a=st.a;
- return {goal:a.goal,household:a.household,age:a.age,passport:a.passport,passportCodes:(a.passport||[]).map(function(n){return PPC[n];}).filter(Boolean),education:a.education,fr_degree:c['if-masters']?a.fr_degree:undefined,recognised:a.recognised,occupation:a.occupation,experience:a.experience,
+ return {household:a.household,age:a.age,passport:a.passport,passportCodes:(a.passport||[]).map(function(n){return PPC[n];}).filter(Boolean),education:a.education,fr_degree:c['if-masters']?a.fr_degree:undefined,recognised:a.recognised,occupation:a.occupation,experience:a.experience,
   salary:c['if-work']?a.salary:undefined,english:a.english,
   langs:{french:c['if-lang-french']?a.french:'none',german:c['if-lang-german']?a.german:'none',japanese:c['if-lang-japanese']?a.japanese:'none'},
   funds:a.funds,funds_exact:a.funds_exact,income_exact:c['if-income']?a.income_exact:undefined,budget:a.budget,invest:c['if-invest']?a.invest:undefined,passive_income:c['if-income']?a.passive_income:undefined,
@@ -126,31 +126,34 @@ var EXT='<span class="sr-only"> (official site, opens in a new tab)</span>';
 function xl(label,url){return '<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+EXT+'</a>';}
 var HINT={free:'Your passport is on the official list of travellers who don’t need a visa for short visits here.',visa:'Your passport isn’t on the official list we checked, so you may need a visitor visa.'};
 function regLinks(c){var r=D.reg[c];return r.links.map(function(l){return '<a href="'+esc(l[1])+'" target="_blank" rel="noopener noreferrer">'+esc(l[0])+'<span class="sr-only"> (official site, opens in a new tab)</span></a>';});}
-function renderResults(){var A=answers();st.eng=A;st.ts=Date.now();save();if(window.WASync)window.WASync(st);if(A.goal==='tour'){renderTour(A);return;}var R=EN.score(D,A),list=R.list;
- $('declNote').innerHTML=EN.declarationNote(A)?'<div class="notice decl" role="note"><p><strong>Worth raising with a professional.</strong> '+esc(D.text.declNote)+'</p></div>':'';
- var ul=$('resList');
- var bn=budgetNote(R,A);$('declNote').innerHTML+=bn;
- if(!list.length){ul.innerHTML='<li class="res-empty"><h2>No pathways to show for these answers</h2><p>'+(R.removed.length?'Your exclusions and stated budget removed every country with a pathway for this goal.':'Your exclusions removed every country with a pathway for this goal.')+' You can still browse the <a href="countries.html">countries, official sources and registries</a>, or edit your answers.</p></li>';fillCountries([]);return;}
- ul.innerHTML=list.map(function(r,i){var c=r.country;
-  var pws=r.pathways.map(function(p){return '<li class="rp"><div class="rp-top"><h4>'+esc(p.name)+'</h4><span class="pill '+p.band+'">'+BL[p.band]+'</span></div>'
+var TL={work:'Work',study:'Study',family:'Family',invest:'Investment and business',retire:'Retirement',remote:'Remote work (digital nomad)'};
+function pwHtml(p){return '<li class="rp"><div class="rp-top"><h5 class="rp-h">'+esc(p.name)+'</h5><span class="pill '+p.band+'">'+BL[p.band]+'</span></div>'
    +(p.passes?'':'<p class="rp-miss"><span>What your answers didn’t show:</span> '+p.failed.map(function(f){return esc(phrase(f));}).join('; ')+'.</p>')
    +(p.note?'<p class="rp-note">'+esc(p.note)+'</p>':'')
    +(p.next_steps?'<p class="rp-next"><span>Next step:</span> '+esc(p.next_steps)+'</p>':'')
    +(p.cost?'<p class="rp-cost small muted">Official figure: '+esc(p.cost.cur)+' '+p.cost.amount.toLocaleString('en')+' '+esc(p.cost.what)+'.</p>':'<p class="rp-cost small muted">Costs vary, so check the official site.</p>')
-   +(p.paused?'<p class="rp-paused"><strong>Currently paused</strong></p>':'')+'<p class="rp-src"><a href="'+esc(p.source)+'" target="_blank" rel="noopener noreferrer">Official page<span class="sr-only"> for '+esc(p.name)+' (opens in a new tab)</span></a> · checked '+esc(p.checked)+(p.verify?' · <span class="unconf">not fully confirmed on that date, so check the official page'+(p.verify_note?' ('+esc(p.verify_note)+')':'')+'</span>':'')+'</p></li>';}).join('');
-  return '<li class="rcard" data-reveal style="--d:'+(i*0.07)+'s"><div class="rc-head"><span class="rc-n" aria-hidden="true">'+(i+1)+'</span><div><h2>'+esc(N(c))+'</h2><span class="pill big '+r.band+'">'+BL[r.band]+'</span></div></div>'
-   +'<p class="rc-text">'+esc(D.meta.result_text[r.band])+'</p><h3 class="rc-sub">Pathways that may be relevant</h3><ul class="rps">'+pws+'</ul>'
-   +'<div class="rc-reg cta-pro"><p>'+esc(D.text.cta.replace('{country}',N(c)))+'</p><p class="cta-acts"><a class="btn btn-primary" href="signup.html?country='+encodeURIComponent(c)+'">Register</a><a class="btn btn-ghost" href="login.html">Log in</a></p></div></li>';}).join('');
- fillCountries(list);
+   +(p.paused?'<p class="rp-paused"><strong>Currently paused</strong></p>':'')+'<p class="rp-src"><a href="'+esc(p.source)+'" target="_blank" rel="noopener noreferrer">Official page<span class="sr-only"> for '+esc(p.name)+' (opens in a new tab)</span></a> · checked '+esc(p.checked)+(p.verify?' · <span class="unconf">not fully confirmed on that date, so check the official page'+(p.verify_note?' ('+esc(p.verify_note)+')':'')+'</span>':'')+'</p></li>';}
+function cardHtml(r,i,g){var c=r.country;
+  return '<li class="rcard" data-reveal style="--d:'+(i*0.07)+'s"><div class="rc-head"><span class="rc-n" aria-hidden="true">'+(i+1)+'</span><div><h3 class="rc-h">'+esc(N(c))+'</h3><span class="pill big '+r.band+'">'+BL[r.band]+'</span></div></div>'
+   +'<p class="rc-text">'+esc(D.meta.result_text[r.band])+'</p><h4 class="rc-sub">Pathways that may be relevant</h4><ul class="rps">'+r.pathways.map(pwHtml).join('')+'</ul>'
+   +'<div class="rc-reg cta-pro"><p>'+esc(D.text.cta.replace('{country}',N(c)))+'</p><p class="cta-acts"><a class="btn btn-primary" href="signup.html?country='+encodeURIComponent(c)+'">Register<span class="sr-only"> for '+esc(N(c))+'</span></a><a class="btn btn-ghost" href="login.html">Log in</a></p></div></li>';}
+function renderResults(){var A=answers();st.eng=A;st.ts=Date.now();save();if(window.WASync)window.WASync(st);var R=EN.scoreAll(D,A,3,true),full=R.groups.filter(function(g){return g.list.length;}),empty=R.groups.filter(function(g){return !g.list.length;});
+ $('declNote').innerHTML=EN.declarationNote(A)?'<div class="notice decl" role="note"><p><strong>Worth raising with a professional.</strong> '+esc(D.text.declNote)+'</p></div>':'';
+ var ul=$('resList');$('declNote').innerHTML+=budgetNote(R,A);
+ var toc=full.length?'<li class="res-toc"><nav aria-label="Pathway types"><p class="rc-sub">Jump to a pathway type</p><ul>'+full.map(function(g){return '<li><a href="#grp-'+g.type+'">'+esc(TL[g.type])+'</a></li>';}).join('')+'<li><a href="#grp-visit">Visiting or touring</a></li></ul></nav></li>':'';
+ var groups=full.map(function(g){return '<li class="rgroup" id="grp-'+g.type+'" aria-labelledby="gh-'+g.type+'"><h2 class="rg-h" id="gh-'+g.type+'">'+esc(TL[g.type])+' pathways</h2><ol class="res-list">'+g.list.map(function(r,i){return cardHtml(r,i,g.type);}).join('')+'</ol></li>';}).join('');
+ groups+=empty.map(function(g){return '<li class="rgroup rg-empty" id="grp-'+g.type+'" aria-labelledby="gh-'+g.type+'"><h2 class="rg-h" id="gh-'+g.type+'">'+esc(TL[g.type])+' pathways</h2><p class="rg-none">No strong matches for this pathway based on your answers.</p></li>';}).join('');
+ if(!full.length)groups='<li class="res-empty"><h2>No pathways to show for these answers</h2><p>'+(R.removed.length?'Your exclusions and stated budget removed every country with a pathway.':'None of the pathways came out above low fit for these answers.')+' You can still browse the <a href="countries.html">countries, official sources and registries</a>, or edit your answers.</p></li>'+groups;
+ ul.innerHTML=toc+groups+tourGroup(A);
+ fillCountries(R.merged);
  if(window.PFReveal)window.PFReveal(ul);}
 function budgetNote(R,A){var r=R.removed;if(!r.length)return '';
  return '<div class="notice budget" role="note"><p><strong>Filtered by your budget.</strong> We left out '+r.map(function(x){return esc(x.name)+' ('+esc(N(x.country))+')';}).join(', ')+', because the official figure (for example '+esc(r[0].cost.cur)+' '+r[0].cost.amount.toLocaleString('en')+' '+esc(r[0].cost.what)+') is clearly above the top of the budget band you chose. We only filter where an official figure is published; elsewhere costs vary, so check the official site. Currency conversion uses '+xl('ECB reference rates',D.extra.fxSource)+' of '+esc(D.extra.checked)+', reduced by 10%.</p></div>';}
-function renderTour(A){var ul=$('resList'),rows=EN.tour(D,A);$('declNote').innerHTML=EN.declarationNote(A)?'<div class="notice decl" role="note"><p><strong>Worth raising with a professional.</strong> '+esc(D.text.declNote)+'</p></div>':'';
- ul.innerHTML='<li class="res-empty"><h2>Visiting or touring</h2><p>The 29 pathways in this questionnaire are for moving, so a visit isn’t scored. Below is general visit information for each country, with the official checker. Entry rules depend on your passport and change often, so always confirm on the official site.</p></li>'+rows.map(function(r,i){var t=r.t,h='';
+function tourGroup(A){var rows=EN.tour(D,A);
+ return '<li class="rgroup" id="grp-visit" aria-labelledby="gh-visit"><h2 class="rg-h" id="gh-visit">Visiting or touring</h2><details class="tour-more"><summary>Show visit information for each country</summary><p>The 29 pathways in this questionnaire are for moving, so a visit isn’t scored. Below is general visit information for each country, with the official checker. Entry rules depend on your passport and change often, so always confirm on the official site.</p><ol class="res-list">'+rows.map(function(r,i){var t=r.t,h='';
   if(r.hint==='auth')h='Your passport appears on the official list for '+esc(t.auth_name)+'.';else if(r.hint==='maybe')h='With your passport you '+esc(t.maybe_text)+'.';else if(r.hint)h=HINT[r.hint];
-  return '<li class="rcard tour" data-reveal style="--d:'+(i*0.04)+'s"><div class="rc-head"><span class="rc-n" aria-hidden="true">'+(i+1)+'</span><div><h2>'+esc(N(r.country))+'</h2></div></div><p class="rc-text">'+esc(t.general)+'</p>'+(h?'<p class="rp-note">'+h+' Conditions apply, so confirm with the official checker.</p>':'')
-  +'<p class="rp-src">'+t.links.map(function(l){return xl(l[0],l[1]);}).join(' · ')+' · checked '+esc(D.extra.checked)+(t.verify?' · <span class="unconf">general guidance, check the official site</span>':'')+'</p></li>';}).join('');
- fillCountries([]);if(window.PFReveal)window.PFReveal(ul);}
+  return '<li class="rcard tour"><div class="rc-head"><span class="rc-n" aria-hidden="true">'+(i+1)+'</span><div><h3 class="rc-h">'+esc(N(r.country))+'</h3></div></div><p class="rc-text">'+esc(t.general)+'</p>'+(h?'<p class="rp-note">'+h+' Conditions apply, so confirm with the official checker.</p>':'')
+  +'<p class="rp-src">'+t.links.map(function(l){return xl(l[0],l[1]);}).join(' · ')+' · checked '+esc(D.extra.checked)+(t.verify?' · <span class="unconf">general guidance, check the official site</span>':'')+'</p></li>';}).join('')+'</ol></details></li>';}
 function fillCountries(list){var sel=$('c-country'),ids=list.map(function(r){return r.country;});Object.keys(D.names).forEach(function(k){if(ids.indexOf(k)<0)ids.push(k);});
  sel.innerHTML='<option value="">Choose…</option>'+ids.map(function(k){return '<option value="'+esc(k)+'">'+esc(N(k))+'</option>';}).join('');if(list[0])sel.value=list[0].country;}
 /* ---------- contact (frontend only) ---------- */
@@ -160,6 +163,7 @@ $('contactForm').addEventListener('submit',function(e){e.preventDefault();var f=
  $('cErr').textContent=err;if(err){var bad=!nm?f.name:!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)?f.email:!f.country.value?f.country:f.consent;bad.focus();return;}
  f.hidden=true;$('thanksName').textContent=', '+nm;var t=$('thanks');t.hidden=false;t.focus();});
 /* ---------- boot ---------- */
+if(!(st.step>=0&&st.step<steps.length))st.step=Math.min(Math.max(0,st.step|0),steps.length-1);st.seen=Math.min(st.seen||0,steps.length-1);
 restore();Object.keys(NUMQ).forEach(function(n){if(st.a[n]!=null)numUpdate($('f-'+n));});capPriorities();applyConditions();
 if(new URLSearchParams(location.search).has('start')){show('wiz');go(st.step||0,true);}
 else if(st.view==='results'&&st.done){renderResults();show('results');}

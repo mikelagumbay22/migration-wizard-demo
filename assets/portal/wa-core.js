@@ -38,11 +38,14 @@ W.home=function(u){return {admin:'admin/dashboard.html',applicant:'app/dashboard
 W.wizardState=function(){try{return JSON.parse(sessionStorage.getItem(WKEY)||'null');}catch(e){return null;}};
 var MC={};
 W.matches=function(u){if(!u||!u.eng||!EN||!D)return [];var k=u.id+':'+(u.ts||0);if(MC[k])return MC[k];
- var r=u.eng.goal==='tour'?[]:EN.score(D,u.eng).list;MC[k]=r;return r;};
+ var r=EN.scoreAll(D,u.eng).merged;MC[k]=r;return r;};
+/* Pathway type of the applicant's best-ranked suggestion (no goal question any more). */
+W.TL={work:'Work',study:'Study',family:'Family',invest:'Investment and business',retire:'Retirement',remote:'Remote work'};
+W.topType=function(u){var m=W.matches(u)[0];return m?W.TL[m.type]:'';};
 W.matchIds=function(u){return W.matches(u).map(function(r){return r.country;});};
 W.mergeWizard=function(u){var st=W.wizardState();if(!st||!st.done||!st.eng)return false;if(u.ts&&st.ts&&st.ts<=u.ts)return false;
- u.eng=st.eng;u.raw=st.a;u.ts=st.ts||Date.now();var m=EN&&D?(st.eng.goal==='tour'?[]:EN.score(D,st.eng).list):[];
- (u.saved=u.saved||[]).unshift({ts:u.ts,goal:st.eng.goal,top:m.map(function(r){return {c:r.country,band:r.band};})});u.saved=u.saved.slice(0,10);save();return true;};
+ u.eng=st.eng;u.raw=st.a;u.ts=st.ts||Date.now();var m=EN&&D?EN.scoreAll(D,st.eng).merged:[];
+ (u.saved=u.saved||[]).unshift({ts:u.ts,type:m[0]?W.TL[m[0].type]:'',top:m.map(function(r){return {c:r.country,band:r.band};})});u.saved=u.saved.slice(0,10);save();return true;};
 /* Called by wizard.js after results render: a signed-in applicant's profile follows their latest answers. */
 window.WASync=function(){var u=W.me();if(u&&u.role==='applicant'){W.mergeWizard(u);}};
 /* ---------- licences, directory, plans ---------- */
@@ -69,16 +72,16 @@ W.send=function(conv,side,text){var now=Date.now();conv.msgs.push({by:side,t:tex
 function seed(){
  var now=Date.now(),users=[],convs=[],apps0;var M=function(n){var d=new Date();d.setDate(1);d.setMonth(d.getMonth()-n);return d.getTime()+DAY*((n*7)%20+2);};
  users.push({id:'u-admin',role:'admin',email:'admin@example.com',pw:hash('Admin#2026'),name:'Jordan Ellery',created:M(12)});
- var base={langs:{french:'none',german:'none',japanese:'none'},job_offer:'no',family_tie:{type:'none'},prior:{type:'none'},exclude:[],priorities:[],decl:{},budget:'40k+',timeline:'1-2y',passport:[],passportCodes:[]};
- var T={work:{goal:'work',age:'25-32',education:'bachelor',recognised:'yes',occupation:'it',experience:'5-7',salary:'60-100k',english:'C1+',funds:'30-100k',priorities:['english_speaking','career','public_healthcare']},
-  nurse:{goal:'work',age:'33-39',education:'bachelor',recognised:'in_progress',occupation:'healthcare',experience:'8+',salary:'40-60k',english:'B2',funds:'15-30k',priorities:['public_healthcare','safety','citizenship']},
-  trade:{goal:'work',age:'25-32',education:'vocational',recognised:'yes',occupation:'trade',experience:'5-7',salary:'40-60k',english:'B2',funds:'15-30k',priorities:['nature','citizenship','safety']},
-  study:{goal:'study',age:'18-24',education:'secondary',recognised:'dont_know',occupation:'other',experience:'0',english:'B2',funds:'30-100k',budget:'15-40k',priorities:['safety','english_speaking','career']},
-  grad:{goal:'study',age:'25-32',education:'bachelor',recognised:'yes',occupation:'engineering',experience:'1-2',english:'C1+',funds:'30-100k',priorities:['career','big_city','citizenship']},
-  retire:{goal:'retire',age:'55+',education:'bachelor',recognised:'dont_know',occupation:'finance',experience:'8+',english:'C1+',funds:'270-500k',passive_income:'3.5-5.5k',priorities:['low_cost_of_living','public_healthcare','safety']},
-  remote:{goal:'remote',age:'33-39',education:'bachelor',recognised:'yes',occupation:'it',experience:'5-7',english:'C1+',funds:'30-100k',passive_income:'5.5k+',priorities:['low_cost_of_living','nature','big_city']},
-  family:{goal:'family',age:'33-39',education:'bachelor',recognised:'dont_know',occupation:'teaching',experience:'5-7',english:'B2',funds:'15-30k',family_tie:{type:'spouse',country:'Canada'},priorities:['safety','public_healthcare','citizenship']},
-  invest:{goal:'invest',age:'40-54',education:'master',recognised:'yes',occupation:'finance',experience:'8+',english:'C1+',funds:'500k+',invest:'500k-1M',priorities:['low_tax','big_city','safety']}};
+ var base={invest:'no',passive_income:'none',langs:{french:'none',german:'none',japanese:'none'},job_offer:'no',family_tie:{type:'none'},prior:{type:'none'},exclude:[],priorities:[],decl:{},budget:'40k+',timeline:'1-2y',passport:[],passportCodes:[]};
+ var T={work:{age:'25-32',education:'bachelor',recognised:'yes',occupation:'it',experience:'5-7',salary:'60-100k',english:'C1+',funds:'30-100k',priorities:['english_speaking','career','public_healthcare']},
+  nurse:{age:'33-39',education:'bachelor',recognised:'in_progress',occupation:'healthcare',experience:'8+',salary:'40-60k',english:'B2',funds:'15-30k',priorities:['public_healthcare','safety','citizenship']},
+  trade:{age:'25-32',education:'vocational',recognised:'yes',occupation:'trade',experience:'5-7',salary:'40-60k',english:'B2',funds:'15-30k',priorities:['nature','citizenship','safety']},
+  study:{age:'18-24',education:'secondary',recognised:'dont_know',occupation:'other',experience:'0',english:'B2',funds:'30-100k',budget:'15-40k',priorities:['safety','english_speaking','career']},
+  grad:{age:'25-32',education:'bachelor',recognised:'yes',occupation:'engineering',experience:'1-2',english:'C1+',funds:'30-100k',priorities:['career','big_city','citizenship']},
+  retire:{age:'55+',education:'bachelor',recognised:'dont_know',occupation:'finance',experience:'8+',english:'C1+',funds:'270-500k',passive_income:'3.5-5.5k',priorities:['low_cost_of_living','public_healthcare','safety']},
+  remote:{age:'33-39',education:'bachelor',recognised:'yes',occupation:'it',experience:'5-7',english:'C1+',funds:'30-100k',passive_income:'5.5k+',priorities:['low_cost_of_living','nature','big_city']},
+  family:{age:'33-39',education:'bachelor',recognised:'dont_know',occupation:'teaching',experience:'5-7',english:'B2',funds:'15-30k',family_tie:{type:'spouse',country:'Canada'},priorities:['safety','public_healthcare','citizenship']},
+  invest:{age:'40-54',education:'master',recognised:'yes',occupation:'finance',experience:'8+',english:'C1+',funds:'500k+',invest:'500k-1M',priorities:['low_tax','big_city','safety']}};
  var A=[['Maria Santos','maria.santos','work','Philippines','PH'],['Arjun Mehta','arjun.mehta','work','India','IN'],['Chen Wei','chen.wei','grad','China','CN'],['Fatima Oyelaran','fatima.oyelaran','nurse','Nigeria','NG'],
   ['Lucas Moreira','lucas.moreira','trade','Brazil','BR'],['Amira Haddad','amira.haddad','study','Lebanon','LB'],['Daniel Kowalczyk','daniel.kowalczyk','work','Poland','PL'],['Sofia Reyes','sofia.reyes','study','Mexico','MX'],
   ['Robert Hale','robert.hale','retire','United States','US'],['Grace Okafor','grace.okafor','nurse','Kenya','KE'],['Nguyen Thi Lan','nguyen.lan','study','Vietnam','VN'],['Omar Farouk','omar.farouk','invest','Egypt','EG'],
@@ -109,7 +112,7 @@ function seed(){
  F('f-windrose','Windrose Meridian Advisory','Windrose Meridian KK','pro',4,'approved',[['Japan','Haruka Mori',fut(19)],['Canada','Haruka Mori',fut(19),'rejected']],{contact:'Haruka Mori',address:'1-2-3 Sample, Minato-ku, Tokyo',langs:['English','Japanese'],services:['work','study'],fees:'Fixed fees per visa category.'});
  F('f-larkspur','Larkspur & Finch Legal','Larkspur & Finch LLP','starter',0,'pending',[['Canada','Theo Larkin',fut(17),'pending']],{contact:'Theo Larkin',address:'55 Example Rd, Calgary, AB',langs:['English'],services:['work','family','visit'],fees:'Hourly consultations.'});
  S={v:1,users:users,convs:convs,created:now};
- apps0=users.filter(function(u){return u.role==='applicant';});apps0.forEach(function(a){var m=W.matches(a);a.saved=[{ts:a.ts,goal:a.eng.goal,top:m.map(function(r){return {c:r.country,band:r.band};})}];});
+ apps0=users.filter(function(u){return u.role==='applicant';});apps0.forEach(function(a){var m=W.matches(a);a.saved=[{ts:a.ts,type:W.topType(a),top:m.map(function(r){return {c:r.country,band:r.band};})}];});
  /* conversations: only with countries the applicant matched and the firm is listed for */
  var apps=users.filter(function(u){return u.role==='applicant';}),firms=users.filter(function(u){return u.role==='firm';});
  var L=['Hello, I matched with {c} and would like to understand my options. Are you able to help?','Thank you for reaching out. We can book a first call to look at your situation. What dates suit you?','Next Tuesday afternoon works for me.','Booked. You will receive a written quote before any work begins.'];

@@ -104,7 +104,20 @@ function tour(D,A){var codes=A.passportCodes||[],ex=A.exclude||[];
       else if(t.maybe&&codes.some(function(x){return t.maybe.indexOf(x)>-1;}))hint='maybe';
       else if(t.auth)hint='visa';}
     return {country:c,t:t,hint:hint};});}
+/* 20261020m: no goal question. Every pathway type is scored with that type's existing rules (scoring.json goal lists and by_goal
+   rule sets), and results are grouped by type. Groups are ordered by their best country; 'merged' is the best entry per country across types. */
+var TYPES=['work','study','family','invest','retire','remote'];
+function rank(a,b){return (b.passes-a.passes)||(BR[b.band]-BR[a.band])||(b.score-a.score);}
+function scoreAll(D,A,perType,hideLow){var groups=[],seen={},removed=[],best={};
+  TYPES.forEach(function(g){var r=score(D,Object.assign({},A,{goal:g}));r.removed.forEach(function(x){if(!seen[x.id]){seen[x.id]=1;removed.push(x);}});
+    r.list.forEach(function(c){var b=best[c.country];if(!b||rank(c,b)<0)best[c.country]=Object.assign({type:g},c);});
+    var l=hideLow?r.list.filter(function(c){return c.band!=='low';}):r.list;
+    if(l.length||hideLow)groups.push({type:g,list:l.slice(0,perType||3)});});
+  /* hideLow: every type is returned; empty groups go last, in TYPES order */
+  groups.sort(function(a,b){if(!a.list.length||!b.list.length)return (!a.list.length-!b.list.length)||TYPES.indexOf(a.type)-TYPES.indexOf(b.type);return rank(a.list[0],b.list[0])||TYPES.indexOf(a.type)-TYPES.indexOf(b.type);});
+  var merged=Object.keys(best).map(function(k){return best[k];}).sort(function(a,b){return rank(a,b)||a.country.localeCompare(b.country);});
+  return {groups:groups,merged:merged,removed:removed};}
 function declarationNote(A){return ['criminal','health','refusal'].some(function(k){return A.decl&&A.decl[k]==='yes';});}
-var api={bandOf:bandOf,own:own,score:score,tour:tour,test:test,evalPathway:evalPathway,lifestyle:lifestyle,goalMax:goalMax,pathwayMax:pathwayMax,declarationNote:declarationNote};
+var api={TYPES:TYPES,scoreAll:scoreAll,bandOf:bandOf,own:own,score:score,tour:tour,test:test,evalPathway:evalPathway,lifestyle:lifestyle,goalMax:goalMax,pathwayMax:pathwayMax,declarationNote:declarationNote};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PFEngine=api;
 })(this);
