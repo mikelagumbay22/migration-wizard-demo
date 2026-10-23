@@ -14,11 +14,13 @@ function readFile(file,max,types,cb){if(!file)return cb(null);if(file.size>max)r
  if(types&&!types.test(file.type))return cb({err:'Please choose a supported file type.'});var r=new FileReader();r.onload=function(){cb({name:file.name,type:file.type,data:r.result});};r.onerror=function(){cb({err:'The file could not be read.'});};r.readAsDataURL(file);}
 var PAGES={};
 /* ================= public: login ================= */
-PAGES.login=function(){var me=W.me();
+function QOK(n){return !!n&&/^wizard\.html(\?[a-z0-9=&_-]*)?$/i.test(n);}
+function QN(){var n=Q.get('next');return QOK(n)?n:'';}
+PAGES.login=function(){var me=W.me();if(me&&QN()){location.replace(QN());return;}
  V.innerHTML='<section class="wa-card auth"><p class="eyebrow">Your account</p><h1 id="pgT" tabindex="-1">Log in</h1><p class="lead">Applicants, immigration professionals and administrators all log in here.</p>'
  +'<form id="lf" novalidate>'+field('lEmail','Email',inp('lEmail','email','autocomplete="username" required'))+field('lPw','Password',inp('lPw','password','autocomplete="current-password" required'))
  +'<p class="err" id="lErr" role="alert"></p><button class="btn btn-primary" type="submit">Log in</button></form>'
- +'<p class="auth-alt">New here? <a href="signup.html">Create an applicant account</a> or <a href="company-signup.html">register your firm</a>.</p></section>'
+ +'<p class="auth-alt">New here? <a href="signup.html'+(QN()?'?next='+encodeURIComponent(QN()):'')+'">Create an applicant account</a> or <a href="company-signup.html">register your firm</a>.</p></section>'
  +'<section class="wa-card creds" aria-labelledby="credT"><h2 id="credT">Sample accounts</h2><p class="small muted">Use these to explore the three portals. Select one to fill the form.</p><ul>'
  +[['Administrator','admin@example.com','Admin#2026'],['Applicant','maria.santos@example.com','Applicant#2026'],['Approved firm','saffrongate@example.com','Firm#2026']].map(function(c){return '<li><button class="cred" type="button" data-e="'+c[1]+'" data-p="'+c[2]+'"><strong>'+c[0]+'</strong><span>'+c[1]+'</span><span>Password: '+c[2]+'</span></button></li>';}).join('')+'</ul></section>';
  if(me)V.insertAdjacentHTML('afterbegin','<p class="notice">You are signed in as '+esc(me.role==='firm'?me.trade:me.name)+'. <a href="'+W.home(me)+'">Go to your dashboard</a>.</p>');
@@ -26,9 +28,10 @@ PAGES.login=function(){var me=W.me();
  $('lf').addEventListener('submit',function(e){e.preventDefault();var f=e.target;clearInv(f);var em=$('lEmail').value.trim(),pw=$('lPw').value;
   if(!EMAIL.test(em))return invalid($('lEmail'),'Please enter a valid email address.',$('lErr'));if(!pw)return invalid($('lPw'),'Please enter your password.',$('lErr'));
   var u=W.login(em,pw);if(!u)return invalid($('lPw'),'That email and password don’t match an account.',$('lErr'));
-  var nx=Q.get('next');location.href=(nx&&/^(app|firm|admin)\/[a-z]+\.html$/.test(nx)&&nx.indexOf({applicant:'app',firm:'firm',admin:'admin'}[u.role]+'/')===0)?nx:W.home(u);});};
+  var nx=Q.get('next');if(QOK(nx)){location.href=nx;return;}location.href=(nx&&/^(app|firm|admin)\/[a-z]+\.html$/.test(nx)&&nx.indexOf({applicant:'app',firm:'firm',admin:'admin'}[u.role]+'/')===0)?nx:W.home(u);});};
 /* ================= public: applicant sign-up ================= */
 PAGES.signup=function(){var me=W.me(),cq=Q.get('country');
+ if(me&&QN()){location.replace(QN());return;}
  if(me&&me.role==='applicant'){location.replace('app/directory.html'+(cq?'?country='+encodeURIComponent(cq):''));return;}
  var st=W.wizardState(),has=st&&st.done&&st.eng;
  V.innerHTML='<section class="wa-card auth"><p class="eyebrow">Applicants</p><h1 id="pgT" tabindex="-1">Create your account</h1><p class="lead">Save your questionnaire results and chat with immigration professionals whose licences we have reviewed'+(cq?' for '+esc(W.cname(cq)):'')+'.</p>'
@@ -37,14 +40,14 @@ PAGES.signup=function(){var me=W.me(),cq=Q.get('country');
  +field('sPw','Password',inp('sPw','password','autocomplete="new-password" minlength="8" required aria-describedby="sPwH"'),'At least 8 characters.')+field('sRes','Country you live in now',inp('sRes','text','autocomplete="country-name" required'))
  +'<label class="consent"><input type="checkbox" id="sConsent" required><span>'+esc(CFG.consent)+'</span></label>'
  +'<label class="consent"><input type="checkbox" id="sTerms" required><span>I have read the <a href="terms.html">Terms</a> and the <a href="privacy.html">Privacy notice</a>.</span></label>'
- +'<p class="err" id="sErr" role="alert"></p><button class="btn btn-primary" type="submit">Create account</button></form><p class="auth-alt">Already registered? <a href="login.html">Log in</a>.</p></section>';
+ +'<p class="err" id="sErr" role="alert"></p><button class="btn btn-primary" type="submit">Create account</button></form><p class="auth-alt">Already registered? <a href="login.html'+(QN()?'?next='+encodeURIComponent(QN()):'')+'">Log in</a>.</p></section>';
  $('sf').addEventListener('submit',function(e){e.preventDefault();var f=e.target,E=$('sErr');clearInv(f);var n=$('sName').value.trim(),em=$('sEmail').value.trim(),pw=$('sPw').value,res=$('sRes').value.trim();
   if(!n)return invalid($('sName'),'Please enter your name.',E);if(!EMAIL.test(em))return invalid($('sEmail'),'Please enter a valid email address.',E);
   if(W.db().users.some(function(u){return u.email.toLowerCase()===em.toLowerCase();}))return invalid($('sEmail'),'An account with that email already exists. Please log in.',E);
   if(pw.length<8)return invalid($('sPw'),'Please use at least 8 characters.',E);if(!res)return invalid($('sRes'),'Please tell us where you live now.',E);
   if(!$('sConsent').checked)return invalid($('sConsent'),'Please tick the consent box so professionals you contact can see your answers.',E);if(!$('sTerms').checked)return invalid($('sTerms'),'Please confirm you have read the Terms and Privacy notice.',E);
   var u={id:W.uid('a'),role:'applicant',email:em,pw:W.hash(pw),name:n,residence:res,created:Date.now(),eng:null,raw:null,ts:0,consent:Date.now(),saved:[]};W.db().users.push(u);W.save();
-  W.login(em,pw);location.href='app/dashboard.html'+(cq?'?country='+encodeURIComponent(cq):'');});};
+  W.login(em,pw);if(QN()){location.href=QN();return;}location.href='app/dashboard.html'+(cq?'?country='+encodeURIComponent(cq):'');});};
 /* ================= public: company sign-up wizard ================= */
 PAGES['company-signup']=function(){var STEPS=['Company','Licences','Services','Plan','Declarations'],step=0;
  var d={langs:'',lics:[{}],services:[],plan:'pro'};
