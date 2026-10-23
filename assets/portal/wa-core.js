@@ -21,7 +21,7 @@ function initials(n){var p=String(n||'?').replace(/&/g,' ').split(/\s+/).filter(
 Object.assign(W,{esc:esc,iso:iso,today:today,fmtDate:fmtDate,fmtTime:fmtTime,money:money,hash:hash,uid:uid,cname:cname,plan:plan,initials:initials,DAY:DAY});
 /* ---------- store ---------- */
 var S=null;
-function load(){try{S=JSON.parse(localStorage.getItem(KEY));}catch(e){S=null;}if(!S||S.v!==1){S=seed();save();}return S;}
+function load(){try{S=JSON.parse(localStorage.getItem(KEY));}catch(e){S=null;}if(!S||S.v!==1){S=seed();save();}else{var ch=false;(S.users||[]).forEach(function(u){var m=/^a(\d+)$/.exec(u.id);if(u.role==='applicant'&&!u.phone&&m&&/@example\.com$/.test(u.email)){var sd=seed().users.find(function(x){return x.id===u.id;});if(sd&&sd.phone){u.phone=sd.phone;u.phoneCountry=sd.phoneCountry;ch=true;}}});if(ch)save();}return S;}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){W.toast&&W.toast('Storage is full. Try a smaller upload.');}}
 W.db=function(){return S||load();};W.save=save;
 W.reset=function(){localStorage.removeItem(KEY);sessionStorage.removeItem(SKEY);S=null;load();};
@@ -69,6 +69,8 @@ W.startConv=function(app,firm,country,text){if(W.listed(firm).indexOf(country)<0
  var now=Date.now(),c={id:uid('c'),a:app.id,f:firm.id,country:country,created:now,msgs:[{by:'a',t:text,ts:now}],ra:now,rf:0};W.db().convs.push(c);save();return {conv:c};};
 W.send=function(conv,side,text){var now=Date.now();conv.msgs.push({by:side,t:text,ts:now});conv['r'+side]=now;save();};
 /* ---------- seed (fictional) ---------- */
+var SDC={PH:'+63',IN:'+91',CN:'+86',NG:'+234',BR:'+55',LB:'+961',PL:'+48',MX:'+52',US:'+1',KE:'+254',VN:'+84',EG:'+20',JP:'+81',BG:'+359',BD:'+880',CO:'+57',TR:'+90',GB:'+44'};
+function SEEDPH(c,i){var n=String(100+i).slice(1);return (SDC[c]||'+1')+' 555-01'+n;}
 function seed(){
  var now=Date.now(),users=[],convs=[],apps0;var M=function(n){var d=new Date();d.setDate(1);d.setMonth(d.getMonth()-n);return d.getTime()+DAY*((n*7)%20+2);};
  users.push({id:'u-admin',role:'admin',email:'admin@example.com',pw:hash('Admin#2026'),name:'Jordan Ellery',created:M(12)});
@@ -89,7 +91,7 @@ function seed(){
   ['Joseph Mwangi','joseph.mwangi','trade','Kenya','KE'],['Aisha Rahman','aisha.rahman','family','Bangladesh','BD'],['Mateo Fernández','mateo.fernandez','work','Colombia','CO'],['Leila Karimi','leila.karimi','grad','Türkiye','TR'],
   ['Thomas Byrne','thomas.byrne','retire','United Kingdom','GB'],['Ana Lima','ana.lima','nurse','Brazil','BR'],['Rafael Cruz','rafael.cruz','work','Philippines','PH'],['Mei Tanaka','mei.tanaka','study','Japan','JP'],['Samuel Adeyemi','samuel.adeyemi','family','Nigeria','NG']];
  A.forEach(function(a,i){var e=Object.assign({},base,T[a[2]]);e.passport=[a[3]];e.passportCodes=[a[4]];var cr=M(11-(i%12))+i*3600e3;
-  users.push({id:'a'+(i+1),role:'applicant',email:a[1]+'@example.com',pw:hash('Applicant#2026'),name:a[0],residence:a[3],created:cr,eng:e,raw:null,ts:cr,consent:cr,saved:[]});});
+  users.push({id:'a'+(i+1),role:'applicant',email:a[1]+'@example.com',pw:hash('Applicant#2026'),name:a[0],residence:a[3],phone:SEEDPH(a[4],i),phoneCountry:a[4],created:cr,eng:e,raw:null,ts:cr,consent:cr,saved:[]});});
  function F(id,trade,legal,plan_,months,status,lics,extra){var cr=M(months),f={id:id,role:'firm',email:id.slice(2)+'@example.com',pw:hash('Firm#2026'),name:extra.contact,created:cr,trade:trade,legal:legal,
    address:extra.address,website:'https://'+id.slice(2)+'.example.com',contact:extra.contact,languages:extra.langs,logo:null,services:extra.services,fees:extra.fees,plan:plan_,status:status,
    trialEnds:cr+CFG.trialDays*DAY,paidThrough:null,invoices:[],staff:[{name:extra.contact,email:id.slice(2)+'@example.com'}],declared:cr,

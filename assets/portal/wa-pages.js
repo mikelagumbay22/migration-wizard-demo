@@ -16,6 +16,38 @@ var PAGES={};
 /* ================= public: login ================= */
 function QOK(n){return !!n&&/^wizard\.html(\?[a-z0-9=&_-]*)?$/i.test(n);}
 function QN(){var n=Q.get('next');return QOK(n)?n:'';}
+/* ---------- phone: dialing codes ---------- */
+var DIAL='AF93 AL355 DZ213 AS1 AD376 AO244 AI1 AG1 AR54 AM374 AW297 AU61 AT43 AZ994 BS1 BH973 BD880 BB1 BY375 BE32 BZ501 BJ229 BM1 BT975 BO591 BA387 BW267 BR55 VG1 BN673 BG359 BF226 BI257 KH855 CM237 CA1 CV238 KY1 CF236 TD235 CL56 CN86 CO57 KM269 CG242 CD243 CK682 CR506 CI225 HR385 CU53 CW599 CY357 CZ420 DK45 DJ253 DM1 DO1 EC593 EG20 SV503 GQ240 ER291 EE372 SZ268 ET251 FK500 FO298 FJ679 FI358 FR33 GF594 PF689 GA241 GM220 GE995 DE49 GH233 GI350 GR30 GL299 GD1 GP590 GU1 GT502 GG44 GN224 GW245 GY592 HT509 HN504 HK852 HU36 IS354 IN91 ID62 IR98 IQ964 IE353 IM44 IL972 IT39 JM1 JP81 JE44 JO962 KZ7 KE254 KI686 XK383 KW965 KG996 LA856 LV371 LB961 LS266 LR231 LY218 LI423 LT370 LU352 MO853 MG261 MW265 MY60 MV960 ML223 MT356 MH692 MQ596 MR222 MU230 YT262 MX52 FM691 MD373 MC377 MN976 ME382 MS1 MA212 MZ258 MM95 NA264 NR674 NP977 NL31 NC687 NZ64 NI505 NE227 NG234 NU683 KP850 MK389 MP1 NO47 OM968 PK92 PW680 PS970 PA507 PG675 PY595 PE51 PH63 PL48 PT351 PR1 QA974 RE262 RO40 RU7 RW250 KN1 LC1 VC1 WS685 SM378 ST239 SA966 SN221 RS381 SC248 SL232 SG65 SX1 SK421 SI386 SB677 SO252 ZA27 KR82 SS211 ES34 LK94 SD249 SR597 SE46 CH41 SY963 TW886 TJ992 TZ255 TH66 TL670 TG228 TO676 TT1 TN216 TR90 TM993 TC1 TV688 UG256 UA380 AE971 GB44 US1 UY598 UZ998 VU678 VA39 VE58 VN84 VI1 YE967 ZM260 ZW263'.split(' ').map(function(s){return [s.slice(0,2),'+'+s.slice(2)];});
+var TOPC=['CA','US','PH','IN','GB'];
+function flag(c){return c.replace(/./g,function(ch){return String.fromCodePoint(127397+ch.charCodeAt(0));});}
+var DN=null;try{DN=new Intl.DisplayNames(['en'],{type:'region'});}catch(e){}
+function dname(c){try{return DN?DN.of(c):c;}catch(e){return c;}}
+function dialOf(c){var r=DIAL.find(function(x){return x[0]===c;});return r?r[1]:'+1';}
+function isoFromName(n){n=String(n||'').trim().toLowerCase();if(!n)return '';var al={'uk':'GB','usa':'US','united states of america':'US','england':'GB','turkey':'TR','türkiye':'TR','south korea':'KR','korea':'KR','vietnam':'VN','russia':'RU','uae':'AE'};if(al[n])return al[n];
+ var r=DIAL.find(function(x){return dname(x[0]).toLowerCase()===n;});return r?r[0]:'';}
+function splitPhone(p){var m=/^(\+\d{1,4})\s*(.*)$/.exec(String(p||'').trim());return m?{code:m[1],num:m[2]}:{code:'',num:String(p||'').trim()};}
+function phoneDigitsOk(num){var d=String(num).replace(/\D/g,'');return /^[\d\s().-]+$/.test(String(num).trim())&&d.length>=7&&d.length<=15;}
+function phoneField(id,label,iso,num,hint){return '<div class="wf"><label for="'+id+'">'+esc(label)+'</label>'+(hint?'<p class="wf-hint" id="'+id+'H">'+esc(hint)+'</p>':'')
+ +'<div class="ph" data-ph="'+id+'"><button type="button" class="ph-btn s-input" id="'+id+'C" aria-haspopup="listbox" aria-expanded="false" aria-label="Country code"><span class="ph-flag" aria-hidden="true"></span><span class="ph-code"></span><svg class="ph-car" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>'
+ +'<input class="s-input ph-num" id="'+id+'" name="'+id+'" type="tel" inputmode="tel" autocomplete="tel-national" required'+(hint?' aria-describedby="'+id+'H"':'')+' value="'+esc(num||'')+'">'
+ +'<div class="ph-pop" hidden><input class="s-input ph-q" type="search" placeholder="Search country or code" aria-label="Search countries" autocomplete="off"><ul class="ph-list" role="listbox" aria-label="Countries"></ul></div></div></div>';}
+function phoneInit(id,iso){var w=document.querySelector('[data-ph="'+id+'"]'),b=w.querySelector('.ph-btn'),pop=w.querySelector('.ph-pop'),q=w.querySelector('.ph-q'),ul=w.querySelector('.ph-list'),cur=iso||'CA',touched=false;
+ var all=TOPC.concat(DIAL.map(function(x){return x[0];}).filter(function(c){return TOPC.indexOf(c)<0;}).sort(function(a,b){return dname(a).localeCompare(dname(b));}));
+ function paint(){b.querySelector('.ph-flag').textContent=flag(cur);b.querySelector('.ph-code').textContent=dialOf(cur);b.setAttribute('aria-label','Country code: '+dname(cur)+' '+dialOf(cur));}
+ function list(){var s=q.value.trim().toLowerCase().replace(/^\+/,'');var items=all.filter(function(c){return !s||dname(c).toLowerCase().indexOf(s)>=0||dialOf(c).slice(1).indexOf(s)===0||c.toLowerCase()===s;});
+  ul.innerHTML=items.map(function(c,i){return (!s&&i===TOPC.length?'<li class="ph-sep" role="presentation"></li>':'')+'<li role="option" tabindex="-1" data-c="'+c+'" aria-selected="'+(c===cur)+'"><span aria-hidden="true">'+flag(c)+'</span><span class="ph-n">'+esc(dname(c))+'</span><span class="ph-d">'+dialOf(c)+'</span></li>';}).join('')||'<li class="ph-none">No matches</li>';}
+ function open(){pop.hidden=false;b.setAttribute('aria-expanded','true');q.value='';list();q.focus();}
+ function close(f){pop.hidden=true;b.setAttribute('aria-expanded','false');if(f)b.focus();}
+ function pick(c){cur=c;touched=true;paint();close();w.querySelector('.ph-num').focus();}
+ b.addEventListener('click',function(){pop.hidden?open():close(true);});q.addEventListener('input',list);
+ q.addEventListener('keydown',function(e){if(e.key==='ArrowDown'){e.preventDefault();var o=ul.querySelector('[role=option]');o&&o.focus();}if(e.key==='Enter'){e.preventDefault();var o=ul.querySelector('[role=option]');o&&pick(o.dataset.c);}});
+ ul.addEventListener('click',function(e){var o=e.target.closest('[role=option]');if(o)pick(o.dataset.c);});
+ ul.addEventListener('keydown',function(e){var o=e.target.closest('[role=option]');if(!o)return;var os=[].slice.call(ul.querySelectorAll('[role=option]')),i=os.indexOf(o);
+  if(e.key==='ArrowDown'){e.preventDefault();(os[i+1]||o).focus();}else if(e.key==='ArrowUp'){e.preventDefault();(i?os[i-1]:q).focus();}else if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(o.dataset.c);}});
+ w.addEventListener('keydown',function(e){if(e.key==='Escape'&&!pop.hidden){e.stopPropagation();close(true);}});
+ document.addEventListener('click',function(e){if(!w.contains(e.target))close();});
+ paint();return {get:function(){return {iso:cur,code:dialOf(cur)};},suggest:function(c){if(c&&!touched){cur=c;paint();}},set:function(c){cur=c;paint();}};}
+function isoFromCode(code,hint){if(hint&&dialOf(hint)===code)return hint;var r=DIAL.find(function(x){return TOPC.indexOf(x[0])>=0&&x[1]===code;})||DIAL.find(function(x){return x[1]===code;});return r?r[0]:'';}
 PAGES.login=function(){var me=W.me();if(me&&QN()){location.replace(QN());return;}
  V.innerHTML='<section class="wa-card auth"><p class="eyebrow">Your account</p><h1 id="pgT" tabindex="-1">Log in</h1><p class="lead">Applicants, immigration professionals and administrators all log in here.</p>'
  +'<form id="lf" novalidate>'+field('lEmail','Email',inp('lEmail','email','autocomplete="username" required'))+field('lPw','Password',inp('lPw','password','autocomplete="current-password" required'))
@@ -37,16 +69,19 @@ PAGES.signup=function(){var me=W.me(),cq=Q.get('country');
  V.innerHTML='<section class="wa-card auth"><p class="eyebrow">Applicants</p><h1 id="pgT" tabindex="-1">Create your account</h1><p class="lead">Save your questionnaire results and chat with immigration professionals whose licences we have reviewed'+(cq?' for '+esc(W.cname(cq)):'')+'.</p>'
  +'<p class="notice">'+(has?'Your questionnaire answers from this browser tab will be saved to your new profile.':'You haven’t finished the questionnaire in this tab yet. You can create your account now and take it afterwards; professionals are matched to the countries in your results.')+'</p>'
  +'<form id="sf" novalidate>'+field('sName','Full name',inp('sName','text','autocomplete="name" required'))+field('sEmail','Email',inp('sEmail','email','autocomplete="email" required'))
+ +phoneField('sPhone','Contact number','', '','Include your area code. A licensed professional may call you.')
  +field('sPw','Password',inp('sPw','password','autocomplete="new-password" minlength="8" required aria-describedby="sPwH"'),'At least 8 characters.')+field('sRes','Country you live in now',inp('sRes','text','autocomplete="country-name" required'))
  +'<label class="consent"><input type="checkbox" id="sConsent" required><span>'+esc(CFG.consent)+'</span></label>'
  +'<label class="consent"><input type="checkbox" id="sTerms" required><span>I have read the <a href="terms.html">Terms</a> and the <a href="privacy.html">Privacy notice</a>.</span></label>'
  +'<p class="err" id="sErr" role="alert"></p><button class="btn btn-primary" type="submit">Create account</button></form><p class="auth-alt">Already registered? <a href="login.html'+(QN()?'?next='+encodeURIComponent(QN()):'')+'">Log in</a>.</p></section>';
+ var PH=phoneInit('sPhone',isoFromName($('sRes')&&$('sRes').value)||'CA');$('sRes').addEventListener('input',function(){PH.suggest(isoFromName(this.value));});
  $('sf').addEventListener('submit',function(e){e.preventDefault();var f=e.target,E=$('sErr');clearInv(f);var n=$('sName').value.trim(),em=$('sEmail').value.trim(),pw=$('sPw').value,res=$('sRes').value.trim();
   if(!n)return invalid($('sName'),'Please enter your name.',E);if(!EMAIL.test(em))return invalid($('sEmail'),'Please enter a valid email address.',E);
   if(W.db().users.some(function(u){return u.email.toLowerCase()===em.toLowerCase();}))return invalid($('sEmail'),'An account with that email already exists. Please log in.',E);
+  var pn=$('sPhone').value.trim();if(!pn)return invalid($('sPhone'),'Please enter a contact number.',E);if(!phoneDigitsOk(pn))return invalid($('sPhone'),'Please enter a valid contact number: 7 to 15 digits, including your area code.',E);
   if(pw.length<8)return invalid($('sPw'),'Please use at least 8 characters.',E);if(!res)return invalid($('sRes'),'Please tell us where you live now.',E);
   if(!$('sConsent').checked)return invalid($('sConsent'),'Please tick the consent box so professionals you contact can see your answers.',E);if(!$('sTerms').checked)return invalid($('sTerms'),'Please confirm you have read the Terms and Privacy notice.',E);
-  var u={id:W.uid('a'),role:'applicant',email:em,pw:W.hash(pw),name:n,residence:res,created:Date.now(),eng:null,raw:null,ts:0,consent:Date.now(),saved:[]};W.db().users.push(u);W.save();
+  var u={id:W.uid('a'),role:'applicant',email:em,pw:W.hash(pw),name:n,residence:res,phone:PH.get().code+' '+pn,phoneCountry:PH.get().iso,created:Date.now(),eng:null,raw:null,ts:0,consent:Date.now(),saved:[]};W.db().users.push(u);W.save();
   W.login(em,pw);if(QN()){location.href=QN();return;}location.href='app/dashboard.html'+(cq?'?country='+encodeURIComponent(cq):'');});};
 /* ================= public: company sign-up wizard ================= */
 PAGES['company-signup']=function(){var STEPS=['Company','Licences','Services','Plan','Declarations'],step=0;
@@ -150,14 +185,16 @@ PAGES['app-profile']=function(){var u=me(),a=u.raw||{},e=u.eng||{};
  function row(k,v){return v==null||v===''||(Array.isArray(v)&&!v.length)?'':'<div><dt>'+esc(k)+'</dt><dd>'+esc(Array.isArray(v)?v.join(', '):v)+'</dd></div>';}
  var h=head('Profile','Your details and questionnaire answers.');
  h+='<section class="s-card"><div class="s-card-head"><h2>Your details</h2></div><form id="pf" novalidate><div class="grid2">'+field('pName','Full name',inp('pName','text','autocomplete="name" value="'+esc(u.name)+'"'))+field('pEmail','Email',inp('pEmail','email','autocomplete="email" value="'+esc(u.email)+'"'))
-  +field('pRes','Country you live in now',inp('pRes','text','value="'+esc(u.residence||'')+'"'))+field('pPhone','Phone (optional)',inp('pPhone','tel','autocomplete="tel" value="'+esc(u.phone||'')+'"'))+'</div><p class="err" id="pE" role="alert"></p><button class="s-btn" type="submit">Save details</button></form></section>';
+  +field('pRes','Country you live in now',inp('pRes','text','value="'+esc(u.residence||'')+'"'))+'</div>'+phoneField('pPhone','Contact number','',splitPhone(u.phone).num,'Include your area code. A licensed professional may call you.')+'<p class="err" id="pE" role="alert"></p><button class="s-btn" type="submit">Save details</button></form></section>';
  h+='<section class="s-card"><div class="s-card-head row"><div><h2>Questionnaire answers</h2><p>'+(u.ts?'Last updated '+esc(W.fmtDate(u.ts)):'Not taken yet')+'. Editing or retaking the questionnaire updates your matches and results.</p></div><div class="row-acts">'+(u.raw?'<button class="s-btn outline" type="button" id="editA">Edit my answers</button>':'')+'<button class="s-btn" type="button" id="retake">Retake the questionnaire</button></div></div>'
   +(u.eng?'<dl class="ans">'+row('Top pathway type',W.topType(u))+row('Moving',a.household)+row('Age band',e.age)+row('Passport(s)',e.passport)+row('Education',e.education)+row('Occupation',e.occupation)+row('Experience (years)',e.experience)+row('English',e.english)+row('Savings (USD)',e.funds_exact!=null?e.funds_exact.toLocaleString('en'):e.funds)+row('Budget (USD)',e.budget)+row('Timeline',e.timeline)+row('Priorities',e.priorities)+'</dl>':'<p class="muted">No answers saved yet.</p>')+'</section>';
  h+='<section class="s-card"><div class="s-card-head"><h2>Consent</h2></div><p class="small">'+esc(CFG.consent)+'</p><p class="muted small">Given '+esc(W.fmtDate(u.consent))+'.</p></section>';
- V.innerHTML=h;$('pf').addEventListener('submit',function(ev){ev.preventDefault();var E=$('pE');clearInv(ev.target);var n=$('pName').value.trim(),em=$('pEmail').value.trim();
+ V.innerHTML=h;var sp=splitPhone(u.phone),PH=phoneInit('pPhone',(sp.code&&isoFromCode(sp.code,u.phoneCountry))||u.phoneCountry||isoFromName(u.residence)||'CA');
+ $('pf').addEventListener('submit',function(ev){ev.preventDefault();var E=$('pE');clearInv(ev.target);var n=$('pName').value.trim(),em=$('pEmail').value.trim();
   if(!n)return invalid($('pName'),'Please enter your name.',E);if(!EMAIL.test(em))return invalid($('pEmail'),'Please enter a valid email address.',E);
   if(W.db().users.some(function(x){return x.id!==u.id&&x.email.toLowerCase()===em.toLowerCase();}))return invalid($('pEmail'),'Another account uses that email.',E);
-  u.name=n;u.email=em;u.residence=$('pRes').value.trim();u.phone=$('pPhone').value.trim();W.save();err(E,'');W.toast('Details saved.');document.querySelectorAll('[data-me-name]').forEach(function(x){x.textContent=n;});});
+  var pn=$('pPhone').value.trim();if(!pn)return invalid($('pPhone'),'Please enter a contact number.',E);if(!phoneDigitsOk(pn))return invalid($('pPhone'),'Please enter a valid contact number: 7 to 15 digits, including your area code.',E);
+  u.name=n;u.email=em;u.residence=$('pRes').value.trim();u.phone=PH.get().code+' '+pn;u.phoneCountry=PH.get().iso;W.save();err(E,'');W.toast('Details saved.');document.querySelectorAll('[data-me-name]').forEach(function(x){x.textContent=n;});});
  if($('editA'))$('editA').addEventListener('click',function(){sessionStorage.setItem('pf_wizard_v1',JSON.stringify({step:0,a:u.raw,seen:6,view:'wiz',done:false}));location.href='../wizard.html';});
  $('retake').addEventListener('click',function(){sessionStorage.removeItem('pf_wizard_v1');location.href='../wizard.html?start';});};
 /* ================= firm ================= */
@@ -184,7 +221,7 @@ PAGES['firm-dashboard']=function(){var f=me(),p=W.plan(f.plan),b=W.billing(f);
   filters:[{label:'Country',options:listed.map(function(c){return [c,W.cname(c)];}),test:function(c,v){return c.country===v;}}],
   cols:[{h:'Applicant',v:function(c){return '<span class="cell-strong">'+esc(W.user(c.a).name)+'</span>';}},{h:'Country',v:function(c){return esc(W.cname(c.country));}},{h:'Top pathway type',v:function(c){var a=W.user(c.a);return esc(a.eng?W.topType(a):'');}},{h:'Last message',v:function(c){return esc(W.last(c).t.slice(0,70));}},{h:'Updated',v:function(c){return esc(W.fmtTime(W.last(c).ts));}}],
   onRow:function(c){location.href='chat.html?c='+c.id;}});};
-function applicantSummary(a){var e=a.eng||{};return '<dl class="ans">'+[['Top pathway type',W.topType(a)],['Age band',e.age],['Passport(s)',(e.passport||[]).join(', ')],['Education',e.education],['Occupation',e.occupation],['English',e.english],['Savings (USD)',e.funds],['Timeline',e.timeline],['Lives in',a.residence]].filter(function(x){return x[1];}).map(function(x){return '<div><dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd></div>';}).join('')+'</dl>';}
+function applicantSummary(a){var e=a.eng||{};return '<dl class="ans">'+[['Top pathway type',W.topType(a)],['Age band',e.age],['Passport(s)',(e.passport||[]).join(', ')],['Education',e.education],['Occupation',e.occupation],['English',e.english],['Savings (USD)',e.funds],['Timeline',e.timeline],['Lives in',a.residence],['Phone',a.consent?a.phone:''],['Email',a.consent?a.email:'']].filter(function(x){return x[1];}).map(function(x){return '<div><dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd></div>';}).join('')+'</dl>';}
 PAGES['firm-chat']=function(){var f=me();if(f.status!=='approved'){V.innerHTML=head('Messages')+pendingCard(f);return;}
  V.innerHTML='<h1 class="msgr-h1" id="pgT" tabindex="-1">Messages</h1><div id="mw"></div>';
  W.messenger({el:$('mw'),side:'f',open:Q.get('c'),list:function(){return W.convs(function(c){return c.f===f.id;});},title:function(c){return W.user(c.a).name;},sub:function(c){return W.cname(c.country)+' · applicant';},
