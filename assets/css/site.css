@@ -1,5 +1,5 @@
-@font-face{font-family:"Fraunces";src:url("../fonts/fraunces-var-latin.woff2?v=20261022c") format("woff2");font-weight:300 700;font-display:optional}
-@font-face{font-family:"Jakarta";src:url("../fonts/jakarta-var-latin.woff2?v=20261022c") format("woff2");font-weight:300 800;font-display:optional}
+@font-face{font-family:"Fraunces";src:url("../fonts/fraunces-var-latin.woff2?v=20261022e") format("woff2");font-weight:300 700;font-display:optional}
+@font-face{font-family:"Jakarta";src:url("../fonts/jakarta-var-latin.woff2?v=20261022e") format("woff2");font-weight:300 800;font-display:optional}
 :root{--paper:#f6f1e7;--paper2:#efe7d8;--card:#fffdf8;--ink:#1d1a16;--ink2:#4a4339;--muted:#7a7064;--line:#e2d8c6;--clay:#b4532a;--clay-ink:#93401c;--sun:#e7a36a;--sage:#5f7a5a;--sage-bg:#e5ecdf;--gold-bg:#f6e6cf;--sand-bg:#ece4d6;
  --r:22px;--ease:cubic-bezier(.2,.7,.2,1);--serif:Fraunces,"Iowan Old Style",Georgia,serif;--sans:Jakarta,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
 *,*::before,*::after{box-sizing:border-box}
@@ -237,3 +237,9 @@ p{margin:0 0 1em}
 .acct-out{color:var(--ink2)}
 @media(max-width:640px){.acct{margin:0 2px}.acct-btn{width:36px;height:36px}.acct-av{width:32px;height:32px;font-size:.76rem}}
 @media (max-width:640px){.acct{position:static}.acct-menu{position:fixed;left:12px;right:12px;top:72px;min-width:0;max-width:none}}
+/* 20261022e top-5 results */
+.rc-n{font-size:1.35rem;letter-spacing:-.02em}
+.rc-score{display:inline-block;margin-left:.5rem;font-size:.82rem;font-weight:600;color:var(--clay-ink);vertical-align:middle}
+.rc-why{margin:.9rem 0 .25rem;padding:.7rem .9rem;border-radius:10px;background:var(--gold-bg);line-height:1.5}
+.res-few{list-style:none;margin:0 0 1rem}
+@media (max-width:560px){.rc-score{display:block;margin:.35rem 0 0}}

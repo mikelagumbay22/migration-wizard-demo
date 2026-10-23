@@ -128,7 +128,45 @@ function byCountry(D,A){var C={},seen={},removed=[];
     return {country:k,pathways:ps,band:ps.reduce(function(b,p){return BR[p.band]>BR[b]?p.band:b;},ps[0].band),passes:ps.some(function(p){return p.passes;}),score:Math.max.apply(null,ps.map(function(p){return p.pct;}))};});
   list.sort(function(a,b){return rank(a,b)||a.country.localeCompare(b.country);});
   return {list:list,removed:removed};}
+
+/* 20261022e: the applicant's top countries. byCountry() already drops low-fit pathways and anything over the stated budget.
+   Order: has a pathway whose requirements are all met, best band, best pathway score, then number of fully met pathways,
+   then number of viable pathways, then pathways with no published cost above the budget (all remaining fit), then name. */
+var TOPN=5;
+function topCountries(D,A,n){var R=byCountry(D,A);n=n||TOPN;
+  /* 20261022e: intent. There is no goal question, so it is inferred: retirement or investment answers, or age 45+, mean study and
+     working-holiday routes are left out of the ranking; younger applicants without those answers keep study routes first in each card. */
+  var I=intent(A);
+  if(I==='settled'){R.list=R.list.map(function(r){var ps=r.pathways.filter(function(p){return !isStudyLike(p);});if(!ps.length)return null;
+    return Object.assign({},r,{pathways:ps,band:ps.reduce(function(b,p){return BR[p.band]>BR[b]?p.band:b;},ps[0].band),passes:ps.some(function(p){return p.passes;}),score:Math.max.apply(null,ps.map(function(p){return p.pct;}))});}).filter(Boolean);}
+  else if(I==='study'){R.list.forEach(function(r){var st=r.pathways.filter(isStudyLike);if(st.length)r.pathways=st.concat(r.pathways.filter(function(p){return st.indexOf(p)<0;}));});}
+  if(I==='settled')R.list.forEach(function(r){var w=r.pathways.filter(function(p){return (p.types||[]).some(function(t){return t==='retire'||t==='invest';});});if(w.length)r.pathways=w.concat(r.pathways.filter(function(p){return w.indexOf(p)<0;}));});
+  R.list.forEach(function(r){if(A.job_offer===r.country){var w=r.pathways.filter(function(p){return p.passes&&(p.types||[]).indexOf('work')>-1;});if(w.length)r.pathways=w.concat(r.pathways.filter(function(p){return w.indexOf(p)<0;}));}r.nPass=r.pathways.filter(function(p){return p.passes;}).length;r.nViable=r.pathways.length;r.type=(r.pathways[0].types||[])[0];r.why=whyFits(D,A,r);});
+  R.list.forEach(function(r){r.fitsIntent=I!=='settled'||r.pathways.some(function(p){return (p.types||[]).some(function(t){return t==='retire'||t==='invest'||t==='remote';});})?1:0;});
+  var all=R.list.slice().sort(function(a,b){return (b.fitsIntent-a.fitsIntent)||rank(a,b)||(b.nPass-a.nPass)||(b.nViable-a.nViable)||a.country.localeCompare(b.country);});
+  return {list:all.slice(0,n),total:all.length,removed:R.removed,n:n,intent:I};}
+function isStudyLike(p){return /_STUDY$/.test(p.id||'')||/holiday/i.test(p.name||'')||((p.types||[]).length===1&&p.types[0]==='study');}
+function intent(A){var old=['45-49','50-54','55+'].indexOf(A.age)>-1,inv=A.invest&&A.invest!=='no',pi=['3.5-5.5k','5.5k+'].indexOf(A.passive_income)>-1;
+  if(old||inv||pi||A.funds==='1M+')return 'settled';if(['under18','18-24','25-32'].indexOf(A.age)>-1&&['0','<1','1-2'].indexOf(A.experience)>-1)return 'study';return '';}
+var LANG={France:'french',Germany:'german',Japan:'japanese',Canada:'french'},LN={french:'French',german:'German',japanese:'Japanese'};
+function whyFits(D,A,r){var c=r.country,top=r.pathways[0],T={};r.pathways.forEach(function(p){(p.types||[]).forEach(function(t){T[t]=1;});});var h=[];
+  if(own(A,c))h.push('your passport');
+  if(A.job_offer===c)h.push('your job offer here');
+  if(A.family_tie&&A.family_tie.country===c&&A.family_tie.type!=='none')h.push('your family here');
+  if(A.prior&&A.prior.country===c&&A.prior.type!=='none')h.push('your earlier '+A.prior.type+' here');
+  var l=LANG[c];if(l&&A.langs&&A.langs[l]&&A.langs[l]!=='none')h.push('your '+LN[l]);
+  if(T.work&&A.occupation&&A.experience&&['0','<1'].indexOf(A.experience)<0)h.push('your work experience');
+  if((T.work||T.study)&&/master|phd|doctor|bachelor/i.test(A.education||''))h.push('your '+(/master/i.test(A.education)?'master’s degree':/phd|doctor/i.test(A.education)?'doctorate':'degree'));
+  if((T.work||T.study)&&/C1|C2|B2/.test(A.english||''))h.push('your English');
+  if(T.invest&&A.invest&&A.invest!=='no')h.push('your investment funds');
+  var PI=A.passive_income&&A.passive_income!=='none';if(T.retire&&PI)h.push('your passive income');
+  if(T.remote&&PI&&!T.retire)h.push('your remote income');
+  h=h.filter(function(x,i){return h.indexOf(x)===i;}).slice(0,3);
+  var lead=r.nPass?('Your answers meet the listed requirements for '+(r.nPass===1?'1 pathway':r.nPass+' pathways')+' here'):('Your answers match part of '+(r.nViable===1?'1 pathway':r.nViable+' pathways')+' here');
+  lead+=', led by '+top.name+'.';
+  if(h.length)lead+=' What helps: '+(h.length>1?h.slice(0,-1).join(', ')+' and '+h[h.length-1]:h[0])+'.';
+  return lead;}
 function declarationNote(A){return ['criminal','health','refusal'].some(function(k){return A.decl&&A.decl[k]==='yes';});}
-var api={TYPES:TYPES,byCountry:byCountry,scoreAll:scoreAll,bandOf:bandOf,own:own,score:score,tour:tour,test:test,evalPathway:evalPathway,lifestyle:lifestyle,goalMax:goalMax,pathwayMax:pathwayMax,declarationNote:declarationNote};
+var api={TYPES:TYPES,TOPN:TOPN,topCountries:topCountries,whyFits:whyFits,byCountry:byCountry,scoreAll:scoreAll,bandOf:bandOf,own:own,score:score,tour:tour,test:test,evalPathway:evalPathway,lifestyle:lifestyle,goalMax:goalMax,pathwayMax:pathwayMax,declarationNote:declarationNote};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PFEngine=api;
 })(this);

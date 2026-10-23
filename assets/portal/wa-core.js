@@ -38,13 +38,13 @@ W.home=function(u){return {admin:'admin/dashboard.html',applicant:'app/dashboard
 W.wizardState=function(){try{return JSON.parse(sessionStorage.getItem(WKEY)||'null');}catch(e){return null;}};
 var MC={};
 W.matches=function(u){if(!u||!u.eng||!EN||!D)return [];var k=u.id+':'+(u.ts||0);if(MC[k])return MC[k];
- var r=EN.scoreAll(D,u.eng).merged;MC[k]=r;return r;};
+ var r=EN.topCountries(D,u.eng).list;MC[k]=r;return r;};
 /* Pathway type of the applicant's best-ranked suggestion (no goal question any more). */
 W.TL={work:'Work',study:'Study',family:'Family',invest:'Investment and business',retire:'Retirement',remote:'Remote work'};
 W.topType=function(u){var m=W.matches(u)[0];return m?W.TL[m.type]:'';};
 W.matchIds=function(u){return W.matches(u).map(function(r){return r.country;});};
 W.mergeWizard=function(u){var st=W.wizardState();if(!st||!st.done||!st.eng)return false;if(u.ts&&st.ts&&st.ts<=u.ts)return false;
- u.eng=st.eng;u.raw=st.a;u.ts=st.ts||Date.now();var m=EN&&D?EN.scoreAll(D,st.eng).merged:[];
+ u.eng=st.eng;u.raw=st.a;u.ts=st.ts||Date.now();var m=EN&&D?EN.topCountries(D,st.eng).list:[];
  (u.saved=u.saved||[]).unshift({ts:u.ts,type:m[0]?W.TL[m[0].type]:'',top:m.map(function(r){return {c:r.country,band:r.band};})});u.saved=u.saved.slice(0,10);save();return true;};
 /* Called by wizard.js after results render: a signed-in applicant's profile follows their latest answers. */
 window.WASync=function(){var u=W.me();if(u&&u.role==='applicant'){W.mergeWizard(u);}};
