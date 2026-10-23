@@ -205,7 +205,8 @@ W.floatingChat=function(u){if(document.body.dataset.waPage.slice(-5)==='-chat')r
  panel.addEventListener('keydown',function(e){if(e.key==='Escape')toggle(false);});upd();W.updUnread=upd;};
 /* ---------- boot: portal chrome ---------- */
 function boot(){load();if(new URLSearchParams(location.search).get('reset')==='1'){W.reset();}
- var u=W.me();document.querySelectorAll('[data-me-name]').forEach(function(e){e.textContent=u?(u.role==='firm'?u.trade:u.name):'';});
+ var u=W.me();if(u&&u.emailVerified===false){var mm=/\/(app|firm|admin)\/([a-z-]+\.html)$/.exec(location.pathname),fn=location.pathname.split('/').pop()||'index.html';if(mm||fn==='wizard.html'){location.replace((mm?'../':'')+'verify-email.html?next='+encodeURIComponent(mm?mm[1]+'/'+mm[2]:'wizard.html'+location.search));return;}}
+var u=W.me();document.querySelectorAll('[data-me-name]').forEach(function(e){e.textContent=u?(u.role==='firm'?u.trade:u.name):'';});
  document.querySelectorAll('[data-me-role]').forEach(function(e){e.textContent=u?({admin:'Administrator',applicant:'Applicant',firm:'Immigration professional'}[u.role]):'';});
  document.querySelectorAll('[data-logout]').forEach(function(b){b.addEventListener('click',function(){W.logout();location.href='../login.html';});});
  document.querySelectorAll('[data-menu]').forEach(function(b){b.addEventListener('click',function(){var s=document.getElementById('sideNav');b.setAttribute('aria-expanded',s.classList.toggle('open'));});});

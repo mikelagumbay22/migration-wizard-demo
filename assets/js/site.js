@@ -28,9 +28,9 @@ function initials(n){var p=String(n||'?').replace(/&/g,' ').split(/\s+/).filter(
 var u=me();window.AMAccount={me:me};
 /* Questionnaire CTAs: signed in goes straight in; signed out logs in first and comes back. */
 function gateHref(a){var h=a.getAttribute('href')||'',i=h.indexOf(Q);if(i<0||!/^(\.\.\/)?wizard\.html/.test(h))return null;return h;}
-document.addEventListener('click',function(e){if(u)return;var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;var h=gateHref(a);if(!h)return;
+document.addEventListener('click',function(e){if(u&&u.emailVerified!==false)return;var a=e.target.closest&&e.target.closest('a[href]');if(!a)return;var h=gateHref(a);if(!h)return;
  if(e.metaKey||e.ctrlKey||e.shiftKey||e.button===1)return;e.preventDefault();var pre=h.indexOf('../')===0?'../':'';
- location.href=pre+'login.html?next='+encodeURIComponent(h.replace(/^\.\.\//,''));},true);
+ location.href=pre+(u?'verify-email.html':'login.html')+'?next='+encodeURIComponent(h.replace(/^\.\.\//,''));},true);
 if(!u)return;
 /* Signed in: swap "Log in" for an account menu. */
 var login=document.querySelector('.nav a.nav-login');if(!login)return;
